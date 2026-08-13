@@ -13,17 +13,19 @@ WriteMakefile(
     #https://metacpan.org/pod/Module::Build::API
 );
 
+
+#  Example postable section if using this module
+#
 sub MY::postamble {
 
     my $postamble=shift()->MY::SUPER::postamble;
     $postamble.=<<'END'
     
-bar:
-	@echo bar
+hello:
+	@echo world
 	
 END
 ;
-
 	return $postamble;
 	
 }

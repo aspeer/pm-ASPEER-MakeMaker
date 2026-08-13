@@ -8,12 +8,16 @@
 use strict;
 use warnings;
 
-use Test::More tests => 6;
+use Test::More tests => 9;
 use File::Spec;
 use File::Temp qw(tempdir);
 
 BEGIN { use_ok('Local::ExtUtils::Common') };
-use Local::ExtUtils::Common::Constant qw($UPDATE_SOURCE_UTIL_FN);
+use Local::ExtUtils::Common::Constant qw(
+    $EXTUTILS_COMMON_PM_ARGV
+    $TEMPLATE_POSTAMBLE_FN
+    $UPDATE_SOURCE_UTIL_FN
+);
 
 #########################
 
@@ -23,8 +27,54 @@ use Local::ExtUtils::Common::Constant qw($UPDATE_SOURCE_UTIL_FN);
 my $tmp_dir=tempdir(CLEANUP => 1);
 my $dest_fn=File::Spec->catfile($tmp_dir, 'Util.pm.0');
 
+my @makemaker_args=(
+    'Local::ExtUtils::Common',
+    'Local_ExtUtils_Common',
+    'Local-ExtUtils-Common',
+    'Local-ExtUtils-Common-0.010',
+    '0.010',
+    '0_010',
+    'lib/Local/ExtUtils/Common.pm',
+    'perl',
+    'Andrew Speer <aspeer@localdomain>',
+    'lib/Local/ExtUtils/Common.pm blib/lib/Local/ExtUtils/Common.pm',
+    '',
+    'all',
+    '.pm',
+    'lib/Local/ExtUtils/Common.pm',
+);
+
+sub target_args {
+    return (@makemaker_args, @_);
+}
+
+my $postamble=do {
+    open(my $fh, '<', $TEMPLATE_POSTAMBLE_FN)
+        or die "unable to open $TEMPLATE_POSTAMBLE_FN: $!";
+    local $/;
+    <$fh>;
+};
+
+like(
+    $postamble,
+    qr/EXTUTILS_COMMON_PM_TARGET=\$\(PERLRUN\) \\\n\t-e 'my \$\$method=shift\(\@ARGV\)/,
+    'postamble defines method-dispatch target syntax'
+);
+
+like(
+    $postamble,
+    qr/\$\(EXTUTILS_COMMON_PM\)->\$\$method\(\$\(EXTUTILS_COMMON_PM_ARGV\), \@ARGV\)/,
+    'postamble passes MakeMaker args before target args'
+);
+
+is(
+    scalar split(/,/, $EXTUTILS_COMMON_PM_ARGV),
+    scalar @makemaker_args,
+    'test MakeMaker argument list matches postamble macro arity'
+);
+
 ok(
-    Local::ExtUtils::Common->utilsync(qw(dummy args), $UPDATE_SOURCE_UTIL_FN, $dest_fn),
+    Local::ExtUtils::Common->utilsync(target_args($UPDATE_SOURCE_UTIL_FN, $dest_fn)),
     'utilsync copies utility file to trial destination'
 );
 
@@ -38,20 +88,15 @@ my $source_mtime=(stat($UPDATE_SOURCE_UTIL_FN))[9];
 utime($source_mtime + 100, $source_mtime + 100, $dest_fn)
     or die "utime failed for $dest_fn: $!";
 
-like(
-    do {
-        local $@;
-        eval { Local::ExtUtils::Common->utilsync(qw(dummy args), $UPDATE_SOURCE_UTIL_FN, $dest_fn) };
-        $@;
-    },
-    qr/destination is newer than source/,
-    'utilsync refuses to overwrite newer destination'
+ok(
+    Local::ExtUtils::Common->utilsync(target_args($UPDATE_SOURCE_UTIL_FN, $dest_fn)),
+    'utilsync overwrites existing destination'
 );
 
 like(
     do {
         local $@;
-        eval { Local::ExtUtils::Common->utilsync(qw(dummy args), $UPDATE_SOURCE_UTIL_FN, $UPDATE_SOURCE_UTIL_FN) };
+        eval { Local::ExtUtils::Common->utilsync(target_args($UPDATE_SOURCE_UTIL_FN, $UPDATE_SOURCE_UTIL_FN)) };
         $@;
     },
     qr/source and destination are the same/,
