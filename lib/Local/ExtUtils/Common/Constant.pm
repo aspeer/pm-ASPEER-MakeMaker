@@ -90,4 +90,3 @@ foreach (keys %Constant) {${$_}=$Constant{$_}}
 @EXPORT_OK=@EXPORT;
 %EXPORT_TAGS=(all => [@EXPORT_OK]);
 $_=\%Constant;
-__END__
