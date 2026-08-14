@@ -1,4 +1,4 @@
-#
+b#
 #  This file is part of Local::ExtUtils::Common.
 #
 #  This software is copyright (c) 2026 by Andrew Speer <aspeer@localdomain>.
@@ -12,12 +12,22 @@
 #
 package Local::ExtUtils::Common;
 
-use 5.038002;
+
+#  Pragma
+#
 use strict;
 use warnings;
+use vars qw($VERSION $VERSION_GIT_SHA $AUTHORITY);
 
+
+#  Base packages
+#
 use Local::ExtUtils::Common::MM ();
 use Local::ExtUtils::Common::Util;
+
+
+#  Other modules
+#
 use File::Basename qw(dirname);
 use File::Copy qw(copy);
 use File::Spec;
@@ -25,29 +35,52 @@ use File::Temp qw(tempfile);
 use Data::Dumper;
 local $Data::Dumper::Sortkeys=1;
 
+
+#  Version information
+#
+$AUTHORITY='cpan:ASPEER';
+$VERSION='0.010';
+$VERSION_GIT_SHA=do { local (@ARGV, $/) = ($_=__FILE__.'.sha'); <> if -f $_ };
+chomp($VERSION_GIT_SHA) if defined $VERSION_GIT_SHA;
+
+
+#  Init Done
+#
+1;
+#==============================================================================
+#
+#  Forward import on to dedicated module
+#
+
+
 sub import {
 
     push (@_, qw(const_config postamble)) unless $_[1];
-    #die Dumper(\@_);
     goto &Local::ExtUtils::Common::Import::import;
     
 }
 
-#==============================================================================
 
-sub foobar {
+
+#==============================================================================
+#
+#  Methods to support Makefile targets from here on
+#
+sub debug {
 
     my ($self, $param_hr)=(shift(), arg(@_));
-
     print Dumper($param_hr);
 
 }
 
+
+
+#  Copy template files from this module to target
+#
 sub utilsync {
 
     my ($self, $param_hr)=(shift(), arg(@_));
     my ($source_fn, $dest_fn)=@{$param_hr->{'ARGV_AR'}};
-    #die (Dumper([$source_fn, $dest_fn]));
 
     die "usage: $self->utilsync(..., UPDATE_SOURCE_UTIL_FN, UPDATE_DEST_UTIL_FN)\n"
         unless $source_fn && $dest_fn;
