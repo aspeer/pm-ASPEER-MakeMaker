@@ -1,4 +1,4 @@
-b#
+#
 #  This file is part of Local::ExtUtils::Common.
 #
 #  This software is copyright (c) 2026 by Andrew Speer <aspeer@localdomain>.
@@ -51,12 +51,12 @@ chomp($VERSION_GIT_SHA) if defined $VERSION_GIT_SHA;
 #
 #  Forward import on to dedicated module
 #
-
-
 sub import {
 
-    push (@_, qw(const_config postamble)) unless $_[1];
-    goto &Local::ExtUtils::Common::Import::import;
+    if ($0=~/Makefile\.PL$/) {
+        push (@_, qw(const_config postamble)) unless $_[1];
+        goto &Local::ExtUtils::Common::Import::import;
+    }
     
 }
 
@@ -66,7 +66,7 @@ sub import {
 #
 #  Methods to support Makefile targets from here on
 #
-sub debug {
+sub dump_param {
 
     my ($self, $param_hr)=(shift(), arg(@_));
     print Dumper($param_hr);

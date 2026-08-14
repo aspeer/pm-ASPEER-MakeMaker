@@ -46,7 +46,7 @@ $VERSION='0.010';
 
 #  ExtUtils::MakeMaker sections in this block
 #
-sub const_config {
+sub const_config0 {
 
 
     #  Get self ref
