@@ -55,10 +55,6 @@ my $local_fn=abs_path(__FILE__) . '.local';
     UPDATE_SOURCE_IMPORT_FN =>
         File::Spec->catfile(dirname(__FILE__), 'Import.pm'),
 
-    #  This file
-    #
-    UPDATE_SOURCE_CONSTANT_FN => __FILE__,
-        
     EXTUTILS_COMMON_PM_ARGV => join(',', qw[
         "$(NAME)"
         "$(NAME_SYM)"

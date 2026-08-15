@@ -83,7 +83,7 @@ sub import {
     #  Sections to augment with additional targets
     #
     {   no warnings qw(redefine once);
-        foreach my $section (qw(const_config depend postamble), @section) {
+        foreach my $section (qw(const_config depend postamble post_initialize init_main), @section) {
             next if $self{$section};
             $self{$section} =*{"ExtUtils::MM::${section}"}{CODE}; # unless (*{"ExtUtils::MM::${section}"}{CODE} eq \&{$section});
             $self{$section} ||= do {
@@ -249,6 +249,91 @@ sub postamble {
     return $postamble;
 
 }
+
+
+sub post_initialize {
+
+
+    #  Add license file, other support files here
+    #
+    my ($self, $mm_or, @param)=@_;
+    (my $section = (caller(0))[3]) =~ s/^.*:://;
+    msg("generating %s $section", ref($self));
+
+
+    #  Get original postamble ready for append
+    #
+    my $post_initialize=$self->{$section}($mm_or, @param);
+
+
+    #  Add license file
+    #
+    $mm_or->{'PM'}{'LICENSE'}='$(INST_LIBDIR)/$(BASEEXT)/LICENSE' if -e 'LICENSE';
+    
+    
+    #  Add git ref if needed
+    #
+    if (grep {$mm_or->{'VERSION_FROM'} eq $_} @{$mm_or->{'EXE_FILES'}}) {
+        push @{$mm_or->{'EXE_FILES'}}, $mm_or->{'VERSION_FROM'}.'.sha';
+    }
+    
+    
+    #  Don't install docs/tmp files etc.
+    #
+    my %pm=map { $_=>$mm_or->{'PM'}{$_} } grep { !/\.(?:md|xml|pod|bak|tmp|0)$/ } keys %{$mm_or->{'PM'}};
+    $mm_or->{'PM'}=\%pm;
+    
+    
+    #  Update Git Ref in file if needed/available
+    #
+    my $devnull=File::Spec->devnull();
+    if (my $git_version=qx(git rev-parse --short HEAD 2>$devnull)) {
+        chomp $git_version;
+        require Tie::File;
+        tie my @lines, 'Tie::File', $mm_or->{'VERSION_FROM'} . '.sha' || die "error on Tie::File, $!";
+        $lines[0]=$git_version;
+    }
+    
+    #  Done
+    #
+    return $post_initialize
+
+}
+
+
+sub init_main {
+
+    #  Strip .pl, .sh extension from script files before installing
+    #
+    my ($self, $mm_or, @param)=@_;
+    (my $section = (caller(0))[3]) =~ s/^.*:://;
+    msg("generating %s $section", ref($self));
+
+
+    #  Get original section
+    #
+    my $init_main=$self->{$section}($mm_or, @param);
+
+
+    #  Now fix files
+    #
+    my @fn;
+    foreach my $fn (@{$mm_or->{'EXE_FILES'}}) {
+        (my $fn_new=$fn)=~s/\.(?:pl|sh)$//;
+        if ($fn_new ne $fn) {
+            -f $fn_new || do { eval{symlink(abs_path($fn), $fn_new)} || copy(abs_path($fn), $fn_new) }
+        }
+        push @fn, $fn_new;
+    }
+    $mm_or->{'EXE_FILES'}=\@fn;
+    
+    
+    #  And return
+    #
+    return $init_main;
+
+}
+
 
 
 __END__
