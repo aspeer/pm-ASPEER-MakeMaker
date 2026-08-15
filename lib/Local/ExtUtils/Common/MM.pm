@@ -24,10 +24,10 @@ sub BEGIN {local $^W=0}
 
 #  External Packages
 #
-use Local::ExtUtils::Common::Import();
-use Local::ExtUtils::Common::Util;
-use Local::ExtUtils::Common::Constant;
-@ISA=qw(Local::ExtUtils::Common::Import);
+use Local::ExtUtils::Common::MM::Import();
+use Local::ExtUtils::Common::MM::Util;
+use Local::ExtUtils::Common::MM::Constant;
+@ISA=qw(Local::ExtUtils::Common::MM::Import);
 
 
 #  Version information in a formate suitable for CPAN etc. Must be

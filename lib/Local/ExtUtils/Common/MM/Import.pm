@@ -10,7 +10,7 @@
 #
 #  <http://dev.perl.org/licenses/>
 #
-package Local::ExtUtils::Common::Import;
+package Local::ExtUtils::Common::MM::Import;
 
 
 #  Compiler Pragma
@@ -25,8 +25,8 @@ sub BEGIN {local $^W=0}
 #  Base Packages
 #
 use Local::ExtUtils::Common::MM;
-use Local::ExtUtils::Common::Util;
-use Local::ExtUtils::Common::Constant;
+use Local::ExtUtils::Common::MM::Util;
+use Local::ExtUtils::Common::MM::Constant;
 
 
 #  External Packages
@@ -163,7 +163,7 @@ sub const_config {
 
     #  Import Constants into macros
     #
-    while (my ($key, $value)=each %{sprintf('%s::Constant::Constant', ref($self))}) {
+    while (my ($key, $value)=each %{sprintf('%s::MM::Constant::Constant', ref($self))}) {
 
         #  Update macros with our config
         #

@@ -10,7 +10,7 @@
 #
 #  <http://dev.perl.org/licenses/>
 #
-package Local::ExtUtils::Common::Util;
+package Local::ExtUtils::Common::MM::Util;
 
 
 #  Pragma
