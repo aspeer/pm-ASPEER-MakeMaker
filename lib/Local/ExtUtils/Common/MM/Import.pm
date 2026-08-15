@@ -31,7 +31,9 @@ use Local::ExtUtils::Common::MM::Constant;
 
 #  External Packages
 #
+use ExtUtils::MakeMaker;
 use Software::LicenseUtils;
+use File::Basename qw(basename);
 
 
 #  Version information in a formate suitable for CPAN etc. Must be
@@ -60,7 +62,7 @@ sub import {
     #
     my ($class, @section)=@_;
     return if $_{$class}{'loaded'}++;
-    require ExtUtils::MakeMaker;
+    return unless ($0=~/Makefile\.PL$/);
     msg("initializing $class import");
 
 
@@ -81,7 +83,7 @@ sub import {
     #  Sections to augment with additional targets
     #
     {   no warnings qw(redefine once);
-        foreach my $section (qw(const_config depend), @section) {
+        foreach my $section (qw(const_config depend postamble), @section) {
             next if $self{$section};
             $self{$section} =*{"ExtUtils::MM::${section}"}{CODE}; # unless (*{"ExtUtils::MM::${section}"}{CODE} eq \&{$section});
             $self{$section} ||= do {
@@ -98,52 +100,12 @@ sub import {
                 msg("import $section from %s", __PACKAGE__);
                 *{"ExtUtils::MM::${section}"}=sub { &{$section}($self, @_) };
             }
-            #*{"ExtUtils::MM::${section}"}=sub {&{sprintf('%s::MM::%s', ref($self), $section)}($self, @_)};
         }
     }
     msg("initializing $class import complete");
 
 }
 
-
-sub const_config0 {
-
-
-    #  Get self ref
-    #
-    my ($self, $mm_or, @param)=@_;
-    (my $section = (caller(0))[3]) =~ s/^.*:://;
-    msg("generating %s $section", ref($self));
-    
-
-    #  Get original const_config ready for append
-    #
-    my $const_config=$self->{$section}($mm_or, @param);
-
-
-    #  Import Constants into macros
-    #
-    while (my ($key, $value)=each %{sprintf('%s::Constant::Constant', ref($self))}) {
-
-        #  Update macros with our config
-        #
-        msg("add macro: $key, value: $value");
-        $mm_or->{'macro'}{$key}=$value;
-
-    }
-
-
-    #  Now construct final PERLRUN string
-    #
-    my $perlrun=&perlrun($self);
-    $mm_or->{'PERLRUN'}=$perlrun;
-
-    
-    #  Macros all set, return whatever master const_config does
-    #
-    return $const_config;
-
-}
 
 sub const_config {
 
@@ -220,8 +182,6 @@ sub const_config {
 
 
 
-
-
 #  MakeMaker::MY replacement depend section
 #
 sub depend {
@@ -247,6 +207,49 @@ sub depend {
     return $depend;
 
 }
+
+
+#  MakeMaker::MY replacement postamble section
+#
+sub postamble {
+
+
+    #  Get self ref
+    #
+    my ($self, $mm_or, @param)=@_;
+    (my $section = (caller(0))[3]) =~ s/^.*:://;
+    msg("generating %s $section", ref($self));
+
+
+    #  Get original postamble ready for append
+    #
+    my $postamble=$self->{$section}($mm_or, @param);
+
+
+    #  Get patch dir and file name
+    #
+    if (my $patch_fn=${sprintf('%s::TEMPLATE_POSTAMBLE_FN', __PACKAGE__)}) {
+        
+        
+        #  Yes, exists as var so implement
+        #
+        msg('using template: %s', basename($patch_fn));
+        
+
+        #  Open it and slurp in
+        #
+        $postamble.=slurp($patch_fn);
+        
+
+    }
+
+
+    #  All done, return result
+    #
+    return $postamble;
+
+}
+
 
 __END__
 

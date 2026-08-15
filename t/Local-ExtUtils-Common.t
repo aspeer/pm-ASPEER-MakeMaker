@@ -9,11 +9,12 @@ use strict;
 use warnings;
 
 use Test::More tests => 9;
+use File::Path qw(make_path);
 use File::Spec;
 use File::Temp qw(tempdir);
 
 BEGIN { use_ok('Local::ExtUtils::Common') };
-use Local::ExtUtils::Common::Constant qw(
+use Local::ExtUtils::Common::MM::Constant qw(
     $EXTUTILS_COMMON_PM_ARGV
     $TEMPLATE_POSTAMBLE_FN
     $UPDATE_SOURCE_UTIL_FN
@@ -25,7 +26,9 @@ use Local::ExtUtils::Common::Constant qw(
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 my $tmp_dir=tempdir(CLEANUP => 1);
-my $dest_fn=File::Spec->catfile($tmp_dir, 'Util.pm.0');
+my $dest_dir=File::Spec->catdir($tmp_dir, qw(Local ExtUtils Common MM));
+make_path($dest_dir);
+my $dest_fn=File::Spec->catfile($dest_dir, 'Util.pm');
 
 my @makemaker_args=(
     'Local::ExtUtils::Common',
@@ -37,7 +40,7 @@ my @makemaker_args=(
     'lib/Local/ExtUtils/Common.pm',
     'perl',
     'Andrew Speer <aspeer@localdomain>',
-    'lib/Local/ExtUtils/Common.pm blib/lib/Local/ExtUtils/Common.pm',
+    $dest_fn,
     '',
     'all',
     '.pm',
@@ -45,7 +48,10 @@ my @makemaker_args=(
 );
 
 sub target_args {
-    return (@makemaker_args, @_);
+    my ($to_inst_pm, @argv)=@_;
+    my @args=@makemaker_args;
+    $args[9]=$to_inst_pm;
+    return (@args, @argv);
 }
 
 my $postamble=do {
@@ -74,7 +80,7 @@ is(
 );
 
 ok(
-    Local::ExtUtils::Common->utilsync(target_args($UPDATE_SOURCE_UTIL_FN, $dest_fn)),
+    Local::ExtUtils::Common->utilsync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
     'utilsync copies utility file to trial destination'
 );
 
@@ -89,7 +95,7 @@ utime($source_mtime + 100, $source_mtime + 100, $dest_fn)
     or die "utime failed for $dest_fn: $!";
 
 ok(
-    Local::ExtUtils::Common->utilsync(target_args($UPDATE_SOURCE_UTIL_FN, $dest_fn)),
+    Local::ExtUtils::Common->utilsync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
     'utilsync overwrites existing destination'
 );
 

@@ -22,7 +22,6 @@ use vars qw($VERSION $VERSION_GIT_SHA $AUTHORITY);
 
 #  Base packages
 #
-use Local::ExtUtils::Common::MM ();
 use Local::ExtUtils::Common::MM::Util;
 
 
@@ -32,7 +31,6 @@ use File::Basename qw(dirname basename);
 use File::Copy qw(copy);
 use File::Spec;
 use File::Temp qw(tempfile);
-use Data::Dumper;
 local $Data::Dumper::Sortkeys=1;
 
 
@@ -53,10 +51,9 @@ chomp($VERSION_GIT_SHA) if defined $VERSION_GIT_SHA;
 #
 sub import {
 
-    if ($0=~/Makefile\.PL$/) {
-        push (@_, qw(const_config postamble)) unless $_[1];
-        goto &Local::ExtUtils::Common::MM::Import::import;
-    }
+    push (@_, qw(const_config postamble)) unless $_[1];
+    require Local::ExtUtils::Common::MM::Import;
+    goto &Local::ExtUtils::Common::MM::Import::import;
     
 }
 
@@ -94,10 +91,6 @@ sub utilsync {
     $dest_pn ||
         return err("unable to get destination for $srce_fn from TO_INST_PM_AR: %s, dest file must exist !", Dumper($to_inst_pm_ar));
     print ("srce: $srce_pn, dest: $dest_pn\n");
-    #printf('%s -pi -e s/%s/%s/ %s'."\n", $^X, $self, $param_hr->{'NAME'}, $dest_pn);
-    #msg('utilsync end');
-    #return;
-    #my $dest_fn;
     
 
     die "usage: $self->utilsync(..., UPDATE_SOURCE_UTIL_FN, UPDATE_DEST_UTIL_FN)\n"
@@ -129,9 +122,6 @@ sub utilsync {
 
         die "source and destination are the same file: $srce_pn -> $dest_pn\n"
             if $srce_stat[0] == $dest_stat[0] && $srce_stat[1] == $dest_stat[1];
-
-        #die "destination is newer than source, refusing to overwrite: $dest_pn\n"
-        #    if $dest_stat[9] > $srce_stat[9];
 
     }
 

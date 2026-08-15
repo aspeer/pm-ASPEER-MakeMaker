@@ -1,13 +1,13 @@
-# Local::ExtUtils::Common::Util
+# Local::ExtUtils::Common::MM::Util
 
 ## Name
 
-Local::ExtUtils::Common::Util - shared utility functions for MakeMaker helpers
+Local::ExtUtils::Common::MM::Util - shared utility functions for MakeMaker helpers
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common::Util;
+use Local::ExtUtils::Common::MM::Util;
 
 msg('building %s', $name);
 my $text = slurp($file);
@@ -19,10 +19,10 @@ my $perlrun = perlrun($hook_object);
 
 ## Description
 
-`Local::ExtUtils::Common::Util` exports support functions used by the rest of
-the distribution. The helpers cover formatted messages, debugging, simple file
-I/O, MakeMaker target argument parsing, and construction of a Perl command for
-generated make targets.
+`Local::ExtUtils::Common::MM::Util` exports support functions used by the rest
+of the distribution. The helpers cover formatted messages, debugging, simple
+file I/O, MakeMaker target argument parsing, and construction of a Perl command
+for generated make targets.
 
 All listed functions are exported by default.
 
@@ -98,7 +98,8 @@ Prints a formatted error message and croaks.
 my $text = slurp($file);
 ```
 
-Reads and returns the full contents of a file. On failure, calls `err`.
+Reads and returns the full contents of a file using `IO::File`. On failure,
+calls `err`.
 
 ### blurp
 
@@ -159,7 +160,7 @@ modules as `-M` options, and the hook object's class as the final module to
 load.
 
 This value is installed into MakeMaker's `PERLRUN` macro by
-`Local::ExtUtils::Common::MM::const_config`.
+`Local::ExtUtils::Common::MM::Import::const_config`.
 
 ## Usage Conventions
 
@@ -171,4 +172,5 @@ calling arguments instead of reading positional values directly.
 
 - `Local::ExtUtils::Common`
 - `Local::ExtUtils::Common::MM`
+- `Local::ExtUtils::Common::MM::Import`
 

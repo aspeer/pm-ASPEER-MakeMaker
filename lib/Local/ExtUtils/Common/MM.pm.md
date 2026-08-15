@@ -2,88 +2,72 @@
 
 ## Name
 
-Local::ExtUtils::Common::MM - MakeMaker section implementations
+Local::ExtUtils::Common::MM - namespace module for MakeMaker helper support
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common qw(const_config postamble);
+use Local::ExtUtils::Common::MM;
 ```
 
-The methods in this module are called by wrappers installed into
-`ExtUtils::MM`. They are not usually called directly.
+This module is normally loaded indirectly by `Local::ExtUtils::Common` and
+`Local::ExtUtils::Common::MM::Import`.
 
 ## Description
 
-`Local::ExtUtils::Common::MM` contains replacement or augmenting
-implementations for selected `ExtUtils::MakeMaker` sections.
+`Local::ExtUtils::Common::MM` currently acts as a namespace and dependency
+anchor for the MakeMaker helper implementation. It loads:
 
-Each method receives an internal hook object, the MakeMaker object, and the
-original MakeMaker arguments. The hook object contains the saved original
-MakeMaker implementation for that section.
+- `Local::ExtUtils::Common::MM::Util`
+- `Local::ExtUtils::Common::MM::Constant`
+
+The active MakeMaker section wrappers and replacement methods are implemented
+in `Local::ExtUtils::Common::MM::Import`.
 
 ## Methods
 
-### const_config
+### const_config0
 
 ```perl
-Local::ExtUtils::Common::MM::const_config($hook, $mm, @args);
+Local::ExtUtils::Common::MM::const_config0($hook, $mm, @args);
 ```
 
-Calls the original MakeMaker `const_config` method, then imports constants from
-`Local::ExtUtils::Common::Constant` into the Makefile macro table.
+Legacy or parked implementation of a `const_config` wrapper. It calls the
+saved original MakeMaker section, copies constants into the Makefile macro
+table, and updates `PERLRUN`.
 
-The method also replaces the MakeMaker object's `PERLRUN` value with a command
-constructed by `Local::ExtUtils::Common::Util::perlrun`. That command preserves
-useful local include paths and loaded `ExtUtils::*` modules when generated make
-targets invoke Perl.
+The active implementation is currently
+`Local::ExtUtils::Common::MM::Import::const_config`.
 
-### postamble
+### postamble0
 
 ```perl
-Local::ExtUtils::Common::MM::postamble($hook, $mm, @args);
+Local::ExtUtils::Common::MM::postamble0($hook, $mm, @args);
 ```
 
-Calls the original MakeMaker `postamble` method, then appends the contents of
-the bundled postamble template:
+Legacy or parked implementation of a `postamble` wrapper. It calls the saved
+original MakeMaker section and appends the configured postamble template.
 
-```text
-lib/Local/ExtUtils/Common/Constant/postamble.inc
-```
-
-The template defines common make targets and the method-dispatch helper used by
-those targets.
-
-## Generated Postamble Convention
-
-The postamble defines an `EXTUTILS_COMMON_PM_TARGET` macro that calls a module
-method selected from the first target argument:
-
-```make
-$(EXTUTILS_COMMON_PM_TARGET) utilsync ...
-```
-
-The generated Perl call passes the fixed MakeMaker macro argument block first,
-then passes any remaining target arguments:
-
-```perl
-$(EXTUTILS_COMMON_PM)->$method($(EXTUTILS_COMMON_PM_ARGV), @ARGV)
-```
-
-Methods intended for postamble dispatch should therefore parse their arguments
-with `Local::ExtUtils::Common::Util::arg`.
+The active implementation is currently
+`Local::ExtUtils::Common::MM::Import::postamble`.
 
 ## Usage Conventions
 
-Add new MakeMaker section customizations here when they are meant to be
-installed by `Local::ExtUtils::Common::Import`.
+Do not call this module's methods directly from a `Makefile.PL`. Use the
+top-level entry point:
 
-Each section method should call the saved original implementation unless it is
-intentionally replacing MakeMaker behavior outright.
+```perl
+use Local::ExtUtils::Common;
+```
+
+New active MakeMaker hook behavior should generally be documented against
+`Local::ExtUtils::Common::MM::Import`, since that module installs and provides
+the current hook implementations.
 
 ## See Also
 
-- `Local::ExtUtils::Common::Import`
-- `Local::ExtUtils::Common::Constant`
-- `Local::ExtUtils::Common::Util`
+- `Local::ExtUtils::Common`
+- `Local::ExtUtils::Common::MM::Import`
+- `Local::ExtUtils::Common::MM::Util`
+- `Local::ExtUtils::Common::MM::Constant`
 

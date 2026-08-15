@@ -25,10 +25,11 @@ use warnings;
 use FindBin qw($RealBin $Script);
 FindBin::again();
 use Data::Dumper;
+use File::Spec;
 use IO::File;
 local $Data::Dumper::Indent=1;
 local $Data::Dumper::Terse=1;
-local $Data::Dumper::SortKeys=1;
+local $Data::Dumper::Sortkeys=1;
 
 
 #  Export functions
