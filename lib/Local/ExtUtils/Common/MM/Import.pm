@@ -34,6 +34,8 @@ use Local::ExtUtils::Common::MM::Constant;
 use ExtUtils::MakeMaker;
 use Software::LicenseUtils;
 use File::Basename qw(basename);
+use File::Copy qw(copy);
+use Cwd qw(abs_path);
 
 
 #  Version information in a formate suitable for CPAN etc. Must be
