@@ -1,6 +1,6 @@
 #  Call module method
 #
-EXTUTILS_COMMON_PM_TARGET=$(PERLRUN) \
+EXTUTILS_COMMON_PM_TARGET=@$(PERLRUN) \
 	-e 'my $$method=shift(@ARGV) || $@; $(EXTUTILS_COMMON_PM)->$$method($(EXTUTILS_COMMON_PM_ARGV), @ARGV)'
 
 

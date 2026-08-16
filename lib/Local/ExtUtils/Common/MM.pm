@@ -16,10 +16,8 @@ package Local::ExtUtils::Common::MM;
 #  Compiler Pragma
 #
 use strict qw(vars);
-use vars   qw($VERSION @ISA $IMPORTED);
 use warnings;
-no warnings qw(uninitialized);
-sub BEGIN {local $^W=0}
+use vars qw($VERSION);
 
 
 #  External Packages

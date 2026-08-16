@@ -82,7 +82,7 @@ sub utilsync {
     
     #  Get dest 
     # 
-    msg('utilsync start %s', Dumper($param_hr));
+    msg('utilsync start');
     my $srce_fn=basename($srce_pn) ||
         return err("unable to get basebane from path: $srce_pn");
     my $to_inst_pm_ar=$param_hr->{'TO_INST_PM_AR'} ||
@@ -90,7 +90,6 @@ sub utilsync {
     my ($dest_pn)=(grep { /MM\/${srce_fn}$/ } @{$to_inst_pm_ar});
     $dest_pn ||
         return err("unable to get destination for $srce_fn from TO_INST_PM_AR: %s, dest file must exist !", Dumper($to_inst_pm_ar));
-    print ("srce: $srce_pn, dest: $dest_pn\n");
     
 
     die "usage: $self->utilsync(..., UPDATE_SOURCE_UTIL_FN, UPDATE_DEST_UTIL_FN)\n"
@@ -154,7 +153,7 @@ sub utilsync {
         return err("qx command: '$qx' failed: $?");
     }
 
-    print "updated $dest_pn from $srce_pn\n";
+    msg("updated $dest_pn");
 }
 
 __END__

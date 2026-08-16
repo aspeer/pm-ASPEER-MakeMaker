@@ -16,8 +16,8 @@ package Local::ExtUtils::Common::MM::Util;
 #  Pragma
 #
 use strict;
-use vars qw($VERSION $DEBUG $QUIET $VERBOSE @EXPORT);
 use warnings;
+use vars qw($VERSION $DEBUG $QUIET $VERBOSE @EXPORT);
 
 
 #  External modules

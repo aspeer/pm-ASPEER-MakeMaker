@@ -10,13 +10,11 @@
 #
 #  <http://dev.perl.org/licenses/>
 #
-
-#
+package Local::ExtUtils::Common::MM::Constant;
 
 
 #  Pragma
 #
-package Local::ExtUtils::Common::MM::Constant;
 use strict qw(vars);
 use warnings;
 use vars qw($VERSION @ISA %EXPORT_TAGS @EXPORT_OK @EXPORT %Constant);

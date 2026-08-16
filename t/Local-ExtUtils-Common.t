@@ -63,8 +63,8 @@ my $postamble=do {
 
 like(
     $postamble,
-    qr/EXTUTILS_COMMON_PM_TARGET=\$\(PERLRUN\) \\\n\t-e 'my \$\$method=shift\(\@ARGV\)/,
-    'postamble defines method-dispatch target syntax'
+    qr/EXTUTILS_COMMON_PM_TARGET=\@\$\(PERLRUN\) \\\n\t-e 'my \$\$method=shift\(\@ARGV\)/,
+    'postamble defines quiet method-dispatch target syntax'
 );
 
 like(

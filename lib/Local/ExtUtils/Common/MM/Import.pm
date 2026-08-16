@@ -13,13 +13,11 @@
 package Local::ExtUtils::Common::MM::Import;
 
 
-#  Compiler Pragma
+#  Pragma
 #
 use strict qw(vars);
-use vars   qw($VERSION @ISA $IMPORTED);
 use warnings;
-no warnings qw(uninitialized);
-sub BEGIN {local $^W=0}
+use vars qw($VERSION);
 
 
 #  Base Packages
@@ -341,6 +339,21 @@ sub init_main {
     #  And return
     #
     return $init_main;
+
+}
+
+
+#  Not used yet
+#
+sub special_targets {
+
+    my ($self, $mm_or, @param)=@_;
+    (my $section = (caller(0))[3]) =~ s/^.*:://;
+    msg("generating %s $section", ref($self));
+
+    my $special_targets=$self->{$section}($mm_or, @param);
+    $special_targets=~s/\.PHONY:\s+(.*)/\.PHONY: $1 cpanfile/m;
+    return $special_targets;
 
 }
 
