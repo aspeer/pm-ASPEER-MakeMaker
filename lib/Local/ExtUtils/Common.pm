@@ -1,7 +1,7 @@
 #
 #  This file is part of Local::ExtUtils::Common.
 #
-#  This software is copyright (c) 2026 by Andrew Speer <aspeer@localdomain>.
+#  This software is copyright (c) 2026 by Andrew Speer <andrew.speer.com.au>.
 #
 #  This is free software; you can redistribute it and/or modify it under
 #  the same terms as the Perl 5 programming language system itself.
@@ -37,7 +37,7 @@ local $Data::Dumper::Sortkeys=1;
 #  Version information
 #
 $AUTHORITY='cpan:ASPEER';
-$VERSION='0.010';
+$VERSION='0.011';
 $VERSION_GIT_SHA=do { local (@ARGV, $/) = ($_=__FILE__.'.sha'); <> if -f $_ };
 chomp($VERSION_GIT_SHA) if defined $VERSION_GIT_SHA;
 
