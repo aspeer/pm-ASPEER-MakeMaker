@@ -83,7 +83,7 @@ sub import {
     #  Sections to augment with additional targets
     #
     {   no warnings qw(redefine once);
-        foreach my $section (qw(const_config depend postamble post_initialize init_main), @section) {
+        foreach my $section (qw(const_config depend postamble), @section) {
             next if $self{$section};
             $self{$section} =*{"ExtUtils::MM::${section}"}{CODE}; # unless (*{"ExtUtils::MM::${section}"}{CODE} eq \&{$section});
             $self{$section} ||= do {
@@ -259,6 +259,8 @@ sub postamble {
 }
 
 
+#  Reference sections below, not used yet
+#
 sub post_initialize {
 
 
