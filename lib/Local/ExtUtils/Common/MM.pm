@@ -29,7 +29,7 @@ use Local::ExtUtils::Common::MM::Constant;
 #  Version information in a formate suitable for CPAN etc. Must be
 #  all on one line
 #
-$VERSION='0.012';
+$VERSION='1.004';
 
 
 #  All done, init finished
