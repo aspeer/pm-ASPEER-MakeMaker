@@ -127,6 +127,14 @@ sub const_config {
 
     #  Import Constants into macros
     #
+    while (my ($key, $value)=each %{sprintf('%s::Constant::Constant', ref($self))}) {
+
+        #  Update macros with our config
+        #
+        msg("add macro: $key, value: $value");
+        $mm_or->{'macro'}{$key}=$value;
+
+    }
     while (my ($key, $value)=each %{sprintf('%s::MM::Constant::Constant', ref($self))}) {
 
         #  Update macros with our config
