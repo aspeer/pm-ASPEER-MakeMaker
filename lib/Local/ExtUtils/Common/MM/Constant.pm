@@ -28,7 +28,7 @@ use File::Basename qw(dirname);
 
 #  Version information
 #
-$VERSION='1.004';
+$VERSION='1.005';
 
 
 #  Get module file name and path, derive name of file to store local constants
