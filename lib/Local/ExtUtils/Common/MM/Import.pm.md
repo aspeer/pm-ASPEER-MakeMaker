@@ -25,10 +25,10 @@ Usually this module is not used directly. It is loaded by
 It only performs hook installation while running under a `Makefile.PL` process.
 If imported outside that context, it returns without modifying `ExtUtils::MM`.
 
-The module always considers `const_config`, `depend`, and `postamble`, and also
-honors any additional section names passed by the caller. For each section, it
-saves the original MakeMaker implementation and then replaces
-`ExtUtils::MM::$section` with a wrapper.
+The module always considers `const_config`, `depend`, `postamble`, and
+`post_initialize`, and also honors any additional section names passed by the
+caller. For each section, it saves the original MakeMaker implementation and
+then replaces `ExtUtils::MM::$section` with a wrapper.
 
 If a method named `<importing class>::MM::<section>` exists, the wrapper calls
 that method. Otherwise it calls the section method implemented in this module.
@@ -50,6 +50,10 @@ The import process:
 The original method is stored in the hook object's internal hash and is called
 by the replacement section methods before augmenting the result.
 
+The importing class and requested section names are also recorded in activation
+order. Generated `PERLRUN` commands use this registry so chained extensions are
+reloaded once each and in the same order.
+
 ## Section Methods
 
 ### const_config
@@ -60,17 +64,21 @@ Local::ExtUtils::Common::MM::Import::const_config($hook, $mm, @args);
 
 Calls the original MakeMaker `const_config`, then copies constants from
 `Local::ExtUtils::Common::MM::Constant` into the Makefile macro table.
+`MM_PREFIX` is private hook configuration and is not emitted as a Makefile
+macro.
 
-It also validates and expands license metadata:
+It publishes supplied license metadata:
 
-- requires `LICENSE` in the MakeMaker object
-- requires `AUTHOR`
-- uses `Software::LicenseUtils` to resolve the license key
-- writes the license URL into `META_MERGE.resources.license`
-- copies normalized `LICENSE` and first `AUTHOR` into the macro table
+- copies `LICENSE` and the first `AUTHOR` into the macro table when supplied
+- uses `Software::LicenseUtils` to resolve the license when both are supplied
+- writes the resulting URL into `META_MERGE.resources.license`
 
-The method then installs a generated `PERLRUN` command and stores
-`DIST_DEFAULT` in the `DIST_DEFAULT_TARGET` macro.
+Neither `LICENSE` nor `AUTHOR` is required by this helper.
+
+The method then installs a global `PERLRUN` command which preserves loaded
+MakeMaker extensions and local include paths. Include arguments are quoted
+through the active MakeMaker implementation. It also stores `DIST_DEFAULT` in
+the `DIST_DEFAULT_TARGET` macro.
 
 ### depend
 
@@ -78,8 +86,8 @@ The method then installs a generated `PERLRUN` command and stores
 Local::ExtUtils::Common::MM::Import::depend($hook, $mm, @args);
 ```
 
-Calls the original MakeMaker `depend` section. If the original section returns
-no dependency text and `VERSION_FROM` is set, it supplies:
+Calls the original MakeMaker `depend` section. When `VERSION_FROM` is set, it
+appends the following dependency unless it is already present:
 
 ```make
 Makefile : $(VERSION_FROM)
@@ -94,11 +102,39 @@ Local::ExtUtils::Common::MM::Import::postamble($hook, $mm, @args);
 Calls the original MakeMaker `postamble`, then appends the configured template
 when `TEMPLATE_POSTAMBLE_FN` is available in this module's namespace.
 
+The module uses `MM_PREFIX` from the importing class's `MM::Constant` package
+when naming its command macro. If it is absent, the class name is uppercased
+and `::` is replaced with `_`. MakeMaker's `oneliner` method generates the
+platform-specific Perl command. The command deliberately uses the global
+`PERLRUN` macro so the same extension environment is available to generated
+targets, then explicitly reloads the dispatch module belonging to this prefix.
+This keeps the target callable when a subsequently loaded extension replaces
+the shared `PERLRUN` value.
+
 The current bundled template is:
 
 ```text
 lib/Local/ExtUtils/Common/MM/postamble.inc
 ```
+
+### post_initialize
+
+```perl
+Local::ExtUtils::Common::MM::Import::post_initialize($hook, $mm, @args);
+```
+
+Calls the original MakeMaker `post_initialize` section, then:
+
+- installs `LICENSE` when it exists
+- excludes `.md`, `.xml`, `.pod`, `.bak`, `.tmp`, `.new`, `.old`, `.ref`,
+  `.0`, and `.1` sources from the install map
+- records the current short Git revision beside `VERSION_FROM` when Git and
+  the source file are available
+- avoids rewriting an unchanged Git revision file
+- installs the revision file beside its module or executable
+
+Executable names remain exactly as declared in `EXE_FILES`; the helper does not
+remove `.pl` or `.sh` extensions.
 
 ## Usage Conventions
 
@@ -112,8 +148,8 @@ used only during Makefile generation.
 
 The module emits formatted status messages through
 `Local::ExtUtils::Common::MM::Util::msg`. It dies if no `ExtUtils::MM`
-inheritance chain can be found, if required license/author metadata is missing,
-or if the configured license string cannot be resolved unambiguously.
+inheritance chain can be found, if a supplied license string cannot be resolved
+unambiguously, or if a Git-revision sidecar cannot be opened.
 
 ## See Also
 
@@ -122,4 +158,3 @@ or if the configured license string cannot be resolved unambiguously.
 - `Local::ExtUtils::Common::MM::Constant`
 - `Local::ExtUtils::Common::MM::Util`
 - `ExtUtils::MakeMaker`
-

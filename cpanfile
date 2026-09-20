@@ -1,10 +1,27 @@
+requires 'Carp';
+requires 'Cwd';
+requires 'Data::Dumper';
+requires 'Exporter';
+requires 'ExtUtils::MM';
+requires 'ExtUtils::MakeMaker';
+requires 'File::Basename';
+requires 'File::Copy';
+requires 'File::Spec';
 requires 'File::Temp';
+requires 'FindBin';
+requires 'IO::File';
 requires 'Software::LicenseUtils';
 requires 'Tie::File';
-requires 'perl', '5.006';
+requires 'base';
+requires 'perl', '5.008';
+requires 'strict';
+requires 'vars';
+requires 'warnings';
 
 on configure => sub {
-    requires 'perl', '5.038002';
+    requires 'perl', '5.008';
+    requires 'ExtUtils::MakeMaker';
+    requires 'Tie::File';
     requires 'version';
     suggests 'ExtUtils::Markdown::Pod';
 };

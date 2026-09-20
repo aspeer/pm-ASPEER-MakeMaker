@@ -176,8 +176,10 @@ sub blurp {
     my ($fn, $text)=@_;
     my $fh=IO::File->new($fn, 'w') ||
         return err("unable to open $fn for write, $!");
-    print $fh $text;
-    $fh->close();
+    $fh->print($text) ||
+        return err("unable to write file $fn, $!");
+    $fh->close() ||
+        return err("unable to close file $fn, $!");
     return 1;
 
 }
@@ -197,7 +199,7 @@ sub perlrun {
     
     #  Get self ref
     #
-    my $self=shift();
+    my ($self, $mm_or)=@_;
 
 
     #  Construct PERL runtime
@@ -208,20 +210,38 @@ sub perlrun {
     #  And modules
     #
     my $perl_mod_ar=&perl_mod;
+    my @import_class;
+    {
+        no warnings qw(once);
+        @import_class=@MY::ExtUtils_MM_Import_Order;
+    }
+    @import_class=(ref($self)) unless @import_class;
+    my %import_class=map {$_=>1} @import_class;
+    my @perl_mod_no_import=grep {!$import_class{$_}} @{$perl_mod_ar};
+    my %seen;
+    my @perl_mod=grep {!$seen{$_}++} (
+        @perl_mod_no_import,
+        @import_class
+    );
 
 
     #  Now construct final PERLRUN string
     #
     my $perlrun;
-    my $perlrun_inc=join(' ', map {"-I$_"} @{$perl_inc_ar});
-    my $perlrun_mod=join(' ', map {"-M$_"} @{$perl_mod_ar});
-    my $class=ref($self);
-    if (my $import_tag_ar=$MY::->{__PACKAGE__}{'import_tag'}) {
-        $perlrun=sprintf("\$(PERL) $perlrun_inc $perlrun_mod -M${class}=%s", join(',', @{$import_tag_ar}));
-    }
-    else {
-        $perlrun="\$(PERL) $perlrun_inc $perlrun_mod -M${class}";
-    }
+    my $quote_cr=$mm_or && $mm_or->can('quote_literal');
+    my $perlrun_inc=join(' ', map {
+        my $arg="-I$_";
+        $quote_cr ? $quote_cr->($mm_or, $arg) : $arg
+    } @{$perl_inc_ar});
+    my $perlrun_mod=join(' ', map {
+        my $class=$_;
+        no warnings qw(once);
+        my $import_tag_ar=$MY::ExtUtils_MM_Import_Tag{$class};
+        $import_tag_ar && @{$import_tag_ar} ?
+            sprintf('-M%s=%s', $class, join(',', @{$import_tag_ar})) :
+            "-M$class"
+    } @perl_mod);
+    $perlrun="\$(PERL) $perlrun_inc $perlrun_mod";
     
     
     #  And return
@@ -309,31 +329,31 @@ __END__
 
 =begin markdown
 
-# Local::ExtUtils::Common::Util
+# Local::ExtUtils::Common::MM::Util
 
 ## Name
 
-Local::ExtUtils::Common::Util - shared utility functions for MakeMaker helpers
+Local::ExtUtils::Common::MM::Util - shared utility functions for MakeMaker helpers
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common::Util;
+use Local::ExtUtils::Common::MM::Util;
 
 msg('building %s', $name);
 my $text = slurp($file);
 blurp($file, $text);
 
 my $param = arg(@make_target_args);
-my $perlrun = perlrun($hook_object);
+my $perlrun = perlrun($hook_object, $make_maker_object);
 ```
 
 ## Description
 
-`Local::ExtUtils::Common::Util` exports support functions used by the rest of
-the distribution. The helpers cover formatted messages, debugging, simple file
-I/O, MakeMaker target argument parsing, and construction of a Perl command for
-generated make targets.
+`Local::ExtUtils::Common::MM::Util` exports support functions used by the rest
+of the distribution. The helpers cover formatted messages, debugging, simple
+file I/O, MakeMaker target argument parsing, and construction of a Perl command
+for generated make targets.
 
 All listed functions are exported by default.
 
@@ -409,7 +429,8 @@ Prints a formatted error message and croaks.
 my $text = slurp($file);
 ```
 
-Reads and returns the full contents of a file. On failure, calls `err`.
+Reads and returns the full contents of a file using `IO::File`. On failure,
+calls `err`.
 
 ### blurp
 
@@ -417,7 +438,8 @@ Reads and returns the full contents of a file. On failure, calls `err`.
 blurp($file, $text);
 ```
 
-Writes text to a file, replacing any existing content. On failure, calls `err`.
+Writes text to a file, replacing any existing content. Open, write, and close
+failures call `err`.
 
 ### touch
 
@@ -461,16 +483,18 @@ The helper also derives:
 ### perlrun
 
 ```perl
-my $command = perlrun($hook_object);
+my $command = perlrun($hook_object, $make_maker_object);
 ```
 
-Builds a Makefile command string beginning with `$(PERL)`. It includes
-non-default local `@INC` directories as `-I` options, loaded `ExtUtils::*`
-modules as `-M` options, and the hook object's class as the final module to
-load.
+Builds the global Makefile `PERLRUN` command beginning with `$(PERL)`. It
+includes non-default local `@INC` directories as `-I` options, loaded
+`ExtUtils::*` modules as `-M` options, and the registered MakeMaker extension
+classes in activation order. Modules are emitted once. When supplied, the
+active MakeMaker object quotes `-I` arguments for the platform shell.
 
 This value is installed into MakeMaker's `PERLRUN` macro by
-`Local::ExtUtils::Common::MM::const_config`.
+`Local::ExtUtils::Common::MM::Import::const_config` and is reused by generated
+targets.
 
 ## Usage Conventions
 
@@ -482,37 +506,37 @@ calling arguments instead of reading positional values directly.
 
 - `Local::ExtUtils::Common`
 - `Local::ExtUtils::Common::MM`
-
+- `Local::ExtUtils::Common::MM::Import`
 
 =end markdown
 
 
-=head1 Local::ExtUtils::Common::Util
+=head1 Local::ExtUtils::Common::MM::Util
 
 
 =head2 Name
 
-Local::ExtUtils::Common::Util - shared utility functions for MakeMaker helpers
+Local::ExtUtils::Common::MM::Util - shared utility functions for MakeMaker helpers
 
 
 =head2 Synopsis
 
 
- use Local::ExtUtils::Common::Util;
- 
+ use Local::ExtUtils::Common::MM::Util;
+
  msg('building %s', $name);
  my $text = slurp($file);
  blurp($file, $text);
- 
+
  my $param = arg(@make_target_args);
- my $perlrun = perlrun($hook_object);
+ my $perlrun = perlrun($hook_object, $make_maker_object);
 
 =head2 Description
 
-C<Local::ExtUtils::Common::Util> exports support functions used by the rest of
-the distribution. The helpers cover formatted messages, debugging, simple file
-I/O, MakeMaker target argument parsing, and construction of a Perl command for
-generated make targets.
+C<Local::ExtUtils::Common::MM::Util> exports support functions used by the rest
+of the distribution. The helpers cover formatted messages, debugging, simple
+file I/O, MakeMaker target argument parsing, and construction of a Perl command
+for generated make targets.
 
 All listed functions are exported by default.
 
@@ -581,14 +605,16 @@ Prints a formatted error message and croaks.
 
 
  my $text = slurp($file);
-Reads and returns the full contents of a file. On failure, calls C<err>.
+Reads and returns the full contents of a file using C<IO::File>. On failure,
+calls C<err>.
 
 
 =head3 blurp
 
 
  blurp($file, $text);
-Writes text to a file, replacing any existing content. On failure, calls C<err>.
+Writes text to a file, replacing any existing content. Open, write, and close
+failures call C<err>.
 
 
 =head3 touch
@@ -701,14 +727,16 @@ C<EXE_FILES_AR> from whitespace-splitting C<EXE_FILES>
 =head3 perlrun
 
 
- my $command = perlrun($hook_object);
-Builds a Makefile command string beginning with C<$(PERL)>. It includes
-non-default local C<@INC> directories as C<-I> options, loaded C<ExtUtils::*>
-modules as C<-M> options, and the hook object's class as the final module to
-load.
+ my $command = perlrun($hook_object, $make_maker_object);
+Builds the global Makefile C<PERLRUN> command beginning with C<$(PERL)>. It
+includes non-default local C<@INC> directories as C<-I> options, loaded
+C<ExtUtils::*> modules as C<-M> options, and the registered MakeMaker extension
+classes in activation order. Modules are emitted once. When supplied, the
+active MakeMaker object quotes C<-I> arguments for the platform shell.
 
 This value is installed into MakeMaker's C<PERLRUN> macro by
-C<Local::ExtUtils::Common::MM::const_config>.
+C<Local::ExtUtils::Common::MM::Import::const_config> and is reused by generated
+targets.
 
 
 =head2 Usage Conventions
@@ -730,6 +758,11 @@ C<Local::ExtUtils::Common>
 =item -
 
 C<Local::ExtUtils::Common::MM>
+
+
+=item -
+
+C<Local::ExtUtils::Common::MM::Import>
 
 
 =back

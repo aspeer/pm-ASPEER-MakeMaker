@@ -14,7 +14,7 @@ my $text = slurp($file);
 blurp($file, $text);
 
 my $param = arg(@make_target_args);
-my $perlrun = perlrun($hook_object);
+my $perlrun = perlrun($hook_object, $make_maker_object);
 ```
 
 ## Description
@@ -107,7 +107,8 @@ calls `err`.
 blurp($file, $text);
 ```
 
-Writes text to a file, replacing any existing content. On failure, calls `err`.
+Writes text to a file, replacing any existing content. Open, write, and close
+failures call `err`.
 
 ### touch
 
@@ -151,16 +152,18 @@ The helper also derives:
 ### perlrun
 
 ```perl
-my $command = perlrun($hook_object);
+my $command = perlrun($hook_object, $make_maker_object);
 ```
 
-Builds a Makefile command string beginning with `$(PERL)`. It includes
-non-default local `@INC` directories as `-I` options, loaded `ExtUtils::*`
-modules as `-M` options, and the hook object's class as the final module to
-load.
+Builds the global Makefile `PERLRUN` command beginning with `$(PERL)`. It
+includes non-default local `@INC` directories as `-I` options, loaded
+`ExtUtils::*` modules as `-M` options, and the registered MakeMaker extension
+classes in activation order. Modules are emitted once. When supplied, the
+active MakeMaker object quotes `-I` arguments for the platform shell.
 
 This value is installed into MakeMaker's `PERLRUN` macro by
-`Local::ExtUtils::Common::MM::Import::const_config`.
+`Local::ExtUtils::Common::MM::Import::const_config` and is reused by generated
+targets.
 
 ## Usage Conventions
 
@@ -173,4 +176,3 @@ calling arguments instead of reading positional values directly.
 - `Local::ExtUtils::Common`
 - `Local::ExtUtils::Common::MM`
 - `Local::ExtUtils::Common::MM::Import`
-

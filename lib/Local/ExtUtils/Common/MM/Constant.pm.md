@@ -32,6 +32,13 @@ and copied into the Makefile macro table by
 
 ## Constants
 
+### MM_PREFIX
+
+Private prefix used when constructing this extension's Makefile macro names.
+It is consumed by the hook implementation and is not emitted as the generic
+Makefile macro `MM_PREFIX`. When omitted, the importing class name is
+uppercased and `::` is replaced with `_`.
+
 ### EXTUTILS_COMMON_PM
 
 The module name used by generated make targets when dispatching back into this
@@ -53,12 +60,12 @@ lib/Local/ExtUtils/Common/MM/postamble.inc
 
 ### UPDATE_SOURCE_UTIL_FN
 
-Path to this distribution's source `MM/Util.pm`. The `utilsync` target can use
+Path to this distribution's source `MM/Util.pm`. The `util_sync` target can use
 this as the source file for utility synchronization.
 
 ### UPDATE_SOURCE_IMPORT_FN
 
-Path to this distribution's source `MM/Import.pm`. The `utilsync` target can
+Path to this distribution's source `MM/Import.pm`. The `util_sync` target can
 use this as the source file for import helper synchronization.
 
 ### UPDATE_SOURCE_CONSTANT_FN
@@ -115,4 +122,3 @@ $_ = \%Constant;
 - `Local::ExtUtils::Common`
 - `Local::ExtUtils::Common::MM::Import`
 - `Local::ExtUtils::Common::MM::Util`
-

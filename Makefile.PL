@@ -1,5 +1,6 @@
-use 5.006;
+use 5.008;
 use strict;
+use warnings;
 use version;
 use ExtUtils::MakeMaker;
 
@@ -26,10 +27,30 @@ my %WriteMakefile=(
     EXE_FILES           => [],
     LICENSE             => 'perl',
     AUTHOR              => 'Andrew Speer <andrew.speer@isolutions.com.au>',
-    MIN_PERL_VERSION    => '5.006',
-    PREREQ_PM           => {},
+    MIN_PERL_VERSION    => '5.008',
+    PREREQ_PM           => {
+        'Carp'                  =>  0,
+        'Cwd'                   =>  0,
+        'Data::Dumper'          =>  0,
+        'Exporter'              =>  0,
+        'ExtUtils::MM'          =>  0,
+        'ExtUtils::MakeMaker'   =>  0,
+        'File::Basename'        =>  0,
+        'File::Copy'            =>  0,
+        'File::Spec'            =>  0,
+        'File::Temp'            =>  0,
+        'FindBin'               =>  0,
+        'IO::File'              =>  0,
+        'Software::LicenseUtils'=>  0,
+        'Tie::File'             =>  0,
+        'base'                  =>  0,
+        'strict'                =>  0,
+        'vars'                  =>  0,
+        'warnings'              =>  0,
+    },
     CONFIGURE_REQUIRES  =>  {
         'ExtUtils::MakeMaker'   =>  0,
+        'Tie::File'             =>  0,
         'version'               =>  0,
     },
     TEST_REQUIRES       =>  {
@@ -73,20 +94,3 @@ while (my($mm_ver_test, $ar)=each %MM_Compat) {
     }
 }
 WriteMakefile(%WriteMakefile);
-
-
-#  Example postable section if using this module
-#
-sub MY::postamble {
-
-    my $postamble=shift()->MY::SUPER::postamble;
-    $postamble.=<<'END'
-    
-hello:
-	@echo world
-	
-END
-;
-	return $postamble;
-	
-}

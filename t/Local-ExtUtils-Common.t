@@ -8,7 +8,7 @@
 use strict;
 use warnings;
 
-use Test::More tests => 9;
+use Test::More tests => 13;
 use File::Path qw(make_path);
 use File::Spec;
 use File::Temp qw(tempdir);
@@ -25,10 +25,21 @@ use Local::ExtUtils::Common::MM::Constant qw(
 # Insert your test code below, the Test::More module is use()ed here so read
 # its man page ( perldoc Test::More ) for help writing this test script.
 
+is(
+    Local::ExtUtils::Common::MM::Import::mm_prefix('ExtUtils::Markdown::Pod'),
+    'EXTUTILS_MARKDOWN_POD',
+    'default Makefile prefix is derived from the extension class'
+);
+
 my $tmp_dir=tempdir(CLEANUP => 1);
 my $dest_dir=File::Spec->catdir($tmp_dir, qw(Local ExtUtils Common MM));
 make_path($dest_dir);
 my $dest_fn=File::Spec->catfile($dest_dir, 'Util.pm');
+my $version_from_fn=File::Spec->catfile($tmp_dir, 'Version.pm');
+open(my $version_from_fh, '>', $version_from_fn) ||
+    die "unable to open $version_from_fn, $!";
+print $version_from_fh "package Version;\nour \$VERSION='0.777';\n1;\n";
+close($version_from_fh) || die "unable to close $version_from_fn, $!";
 
 my @makemaker_args=(
     'Local::ExtUtils::Common',
@@ -37,7 +48,7 @@ my @makemaker_args=(
     'Local-ExtUtils-Common-0.010',
     '0.010',
     '0_010',
-    'lib/Local/ExtUtils/Common.pm',
+    $version_from_fn,
     'perl',
     'Andrew Speer <aspeer@localdomain>',
     $dest_fn,
@@ -61,16 +72,22 @@ my $postamble=do {
     <$fh>;
 };
 
-like(
+unlike(
     $postamble,
-    qr/EXTUTILS_COMMON_PM_TARGET=\@\$\(PERLRUN\) \\\n\t-e 'my \$\$method=shift\(\@ARGV\)/,
-    'postamble defines quiet method-dispatch target syntax'
+    qr/^EXTUTILS_COMMON_PM_TARGET=/m,
+    'postamble leaves platform command generation to MakeMaker'
 );
 
 like(
     $postamble,
-    qr/\$\(EXTUTILS_COMMON_PM\)->\$\$method\(\$\(EXTUTILS_COMMON_PM_ARGV\), \@ARGV\)/,
-    'postamble passes MakeMaker args before target args'
+    qr/\$\(EXTUTILS_COMMON_PM_TARGET\) util_sync \$\(UPDATE_SOURCE_UTIL_FN\)/,
+    'postamble passes util_sync method and utility source explicitly'
+);
+
+unlike(
+    $postamble,
+    qr/(?:gherkin|foobar|serfin)/,
+    'postamble contains no demonstration targets or missing methods'
 );
 
 is(
@@ -80,11 +97,17 @@ is(
 );
 
 ok(
-    Local::ExtUtils::Common->utilsync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
-    'utilsync copies utility file to trial destination'
+    Local::ExtUtils::Common->util_sync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
+    'util_sync copies utility file to trial destination'
 );
 
 ok(-e $dest_fn, 'trial destination exists');
+
+like(
+    Local::ExtUtils::Common::MM::Util::slurp($dest_fn),
+    qr/\$VERSION='0\.777'/,
+    'util_sync applies the version parsed from VERSION_FROM'
+);
 
 my $source_size=-s $UPDATE_SOURCE_UTIL_FN;
 my $dest_size=-s $dest_fn;
@@ -95,16 +118,18 @@ utime($source_mtime + 100, $source_mtime + 100, $dest_fn)
     or die "utime failed for $dest_fn: $!";
 
 ok(
-    Local::ExtUtils::Common->utilsync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
-    'utilsync overwrites existing destination'
+    Local::ExtUtils::Common->util_sync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
+    'util_sync overwrites existing destination'
 );
+
+is((stat($dest_fn))[9], $source_mtime, 'util_sync preserves the source timestamp');
 
 like(
     do {
         local $@;
-        eval { Local::ExtUtils::Common->utilsync(target_args($UPDATE_SOURCE_UTIL_FN, $UPDATE_SOURCE_UTIL_FN)) };
+        eval { Local::ExtUtils::Common->util_sync(target_args($UPDATE_SOURCE_UTIL_FN, $UPDATE_SOURCE_UTIL_FN)) };
         $@;
     },
     qr/source and destination are the same/,
-    'utilsync refuses same source and destination'
+    'util_sync refuses same source and destination'
 );

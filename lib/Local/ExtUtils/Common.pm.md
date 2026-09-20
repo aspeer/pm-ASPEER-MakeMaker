@@ -27,9 +27,11 @@ sets version metadata, imports shared utility functions from
 `Local::ExtUtils::Common::MM::Util`, and forwards import handling to
 `Local::ExtUtils::Common::MM::Import`.
 
-When imported without arguments, it defaults to enabling the `const_config` and
-`postamble` MakeMaker sections. Import handling is lazy-loaded and then
-delegated to `Local::ExtUtils::Common::MM::Import`.
+When imported without arguments, it requests the `const_config` and `postamble`
+MakeMaker sections. The hook installer also enables `depend` and
+`post_initialize`, which provide the standard dependency, install-map, and
+Git-provenance behavior. Import handling is lazy-loaded and then delegated to
+`Local::ExtUtils::Common::MM::Import`.
 
 The module also contains methods intended to be invoked by generated make
 targets.
@@ -44,7 +46,8 @@ use Local::ExtUtils::Common qw(const_config postamble);
 ```
 
 Enables MakeMaker section hooks. If no sections are supplied, `const_config`
-and `postamble` are requested.
+and `postamble` are requested; `depend` and `post_initialize` are installed by
+the hook manager as common defaults.
 
 The implementation loads `Local::ExtUtils::Common::MM::Import` and forwards to
 its `import` method.
@@ -58,10 +61,10 @@ Local::ExtUtils::Common->dump_param(@makemaker_args, @args);
 Debugging method. It parses the MakeMaker-style argument list with `arg` and
 prints the resulting hash using `Dumper`.
 
-### utilsync
+### util_sync
 
 ```perl
-Local::ExtUtils::Common->utilsync(
+Local::ExtUtils::Common->util_sync(
     @makemaker_args,
     $source_file,
 );
@@ -70,7 +73,7 @@ Local::ExtUtils::Common->utilsync(
 Copies one of this distribution's helper files into the consuming
 distribution. The method expects the fixed MakeMaker argument block first,
 followed by the source file path. The destination is not passed directly.
-Instead, `utilsync` derives it from the parsed `TO_INST_PM` MakeMaker value.
+Instead, `util_sync` derives it from the parsed `TO_INST_PM` MakeMaker value.
 
 The destination lookup uses the source basename and selects an installed module
 path ending in:
@@ -91,12 +94,12 @@ The method validates that:
 - the destination directory exists
 - the source and destination are not the same path or same file
 
-It copies via a temporary file in the destination directory, preserves mode and
-timestamps from the source, then renames the temporary file into place.
-
-After copying, it runs an in-place Perl substitution over the destination file,
-replacing the helper package name with the consuming distribution's `NAME`
-value.
+It reads the source and replaces the helper package name with the consuming
+distribution's `NAME`. When `VERSION_FROM` names an available source file, its
+declared `$VERSION` is parsed using MakeMaker and applied to the copied helper.
+The MakeMaker `VERSION` value is used as a fallback. The result is written
+through a temporary file in the destination directory; source mode and
+timestamps are preserved before the temporary file is renamed into place.
 
 Current behavior allows overwriting an existing destination file.
 
@@ -110,10 +113,11 @@ Target methods should accept the fixed MakeMaker argument block first and use
 `Local::ExtUtils::Common::MM::Util::arg` to separate MakeMaker fields from
 target-specific arguments.
 
+The module supports Perl 5.8 and later.
+
 ## See Also
 
 - `Local::ExtUtils::Common::MM`
 - `Local::ExtUtils::Common::MM::Import`
 - `Local::ExtUtils::Common::MM::Util`
 - `Local::ExtUtils::Common::MM::Constant`
-

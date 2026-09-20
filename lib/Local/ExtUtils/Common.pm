@@ -28,7 +28,6 @@ use Local::ExtUtils::Common::MM::Util;
 #  Other modules
 #
 use File::Basename qw(dirname basename);
-use File::Copy qw(copy);
 use File::Spec;
 use File::Temp qw(tempfile);
 local $Data::Dumper::Sortkeys=1;
@@ -38,8 +37,8 @@ local $Data::Dumper::Sortkeys=1;
 #
 $AUTHORITY='cpan:ASPEER';
 $VERSION='1.005';
-$VERSION_GIT_SHA=do { local (@ARGV, $/) = ($_=__FILE__.'.sha'); <> if -f $_ };
-chomp($VERSION_GIT_SHA) if defined $VERSION_GIT_SHA;
+$VERSION_GIT_SHA=do { local(@ARGV, $/, $_); @ARGV=($_=__FILE__.'.sha'); <> if -f $_ };
+chomp($VERSION_GIT_SHA) if defined($VERSION_GIT_SHA);
 
 
 #  Init Done
@@ -74,7 +73,7 @@ sub dump_param {
 
 #  Copy template files from this module to target
 #
-sub utilsync {
+sub util_sync {
 
     my ($self, $param_hr)=(shift(), arg(@_));
     my ($srce_pn)=@{$param_hr->{'ARGV_AR'}};
@@ -82,7 +81,7 @@ sub utilsync {
     
     #  Get dest 
     # 
-    msg('utilsync start');
+    msg('util_sync start');
     my $srce_fn=basename($srce_pn) ||
         return err("unable to get basebane from path: $srce_pn");
     my $to_inst_pm_ar=$param_hr->{'TO_INST_PM_AR'} ||
@@ -92,7 +91,7 @@ sub utilsync {
         return err("unable to get destination for $srce_fn from TO_INST_PM_AR: %s, dest file must exist !", Dumper($to_inst_pm_ar));
     
 
-    die "usage: $self->utilsync(..., UPDATE_SOURCE_UTIL_FN, UPDATE_DEST_UTIL_FN)\n"
+    die "usage: $self->util_sync(..., source_filename)\n"
         unless $srce_pn && $dest_pn;
 
     die "source file not found: $srce_pn\n"
@@ -124,13 +123,26 @@ sub utilsync {
 
     }
 
-    my ($tmp_fh, $tmp_fn)=tempfile('.utilsync.XXXXXXXX', DIR => $dest_dir);
+    my ($tmp_fh, $tmp_fn)=tempfile('.util_sync.XXXXXXXX', DIR => $dest_dir);
     close($tmp_fh)
         or die "close failed for temporary file $tmp_fn: $!\n";
 
     eval {
-        copy($srce_pn, $tmp_fn)
-            or die "copy failed from $srce_pn to $tmp_fn: $!\n";
+        my $text=slurp($srce_pn);
+        my $name=$param_hr->{'NAME'} ||
+            die "target module name unavailable for $dest_pn\n";
+        my $version=$param_hr->{'VERSION'};
+        my $version_from_fn=$param_hr->{'VERSION_FROM'};
+        if ($version_from_fn && -f $version_from_fn) {
+            require ExtUtils::MakeMaker;
+            my $version_from=MM->parse_version($version_from_fn);
+            $version=$version_from
+                if defined($version_from) && length($version_from) && $version_from ne 'undef';
+        }
+        $text=~s/\Q$self\E/$name/g;
+        $text=~s/(\$VERSION\s*=\s*')[^']*(';)/$1$version$2/
+            if defined($version) && length($version);
+        blurp($tmp_fn, $text);
         chmod($srce_stat[2] & 07777, $tmp_fn)
             or die "chmod failed for temporary file $tmp_fn: $!\n";
         utime($srce_stat[8], $srce_stat[9], $tmp_fn)
@@ -145,15 +157,8 @@ sub utilsync {
     };
     
     
-    my $qx=sprintf('%s -pi -e s/%s/%s/ %s'."\n", $^X, $self, $param_hr->{'NAME'}, $dest_pn);
-    if (my $err=qx{$qx}) {
-        return err("unexpected stdout on '$qx', $err");
-    }
-    if ($? != 0) {
-        return err("qx command: '$qx' failed: $?");
-    }
-
     msg("updated $dest_pn");
+    return 1;
 }
 
 __END__
@@ -164,7 +169,7 @@ __END__
 
 ## Name
 
-Local::ExtUtils::Common - top-level entry point for local MakeMaker helpers
+Local::ExtUtils::Common - top-level entry point and make-target methods for local MakeMaker helpers
 
 ## Synopsis
 
@@ -185,15 +190,18 @@ use Local::ExtUtils::Common qw(const_config postamble);
 ## Description
 
 `Local::ExtUtils::Common` is the public entry point for the distribution. It
-loads the MakeMaker hook implementation and delegates import handling to
-`Local::ExtUtils::Common::Import`.
+sets version metadata, imports shared utility functions from
+`Local::ExtUtils::Common::MM::Util`, and forwards import handling to
+`Local::ExtUtils::Common::MM::Import`.
 
-When imported without arguments, it defaults to enabling the `const_config` and
-`postamble` MakeMaker sections. These hooks add shared Makefile macros and
-append the common postamble template.
+When imported without arguments, it requests the `const_config` and `postamble`
+MakeMaker sections. The hook installer also enables `depend` and
+`post_initialize`, which provide the standard dependency, install-map, and
+Git-provenance behavior. Import handling is lazy-loaded and then delegated to
+`Local::ExtUtils::Common::MM::Import`.
 
-The module also contains methods that are intended to be invoked by generated
-make targets.
+The module also contains methods intended to be invoked by generated make
+targets.
 
 ## Methods
 
@@ -205,48 +213,62 @@ use Local::ExtUtils::Common qw(const_config postamble);
 ```
 
 Enables MakeMaker section hooks. If no sections are supplied, `const_config`
-and `postamble` are enabled.
+and `postamble` are requested; `depend` and `post_initialize` are installed by
+the hook manager as common defaults.
 
-The implementation forwards to `Local::ExtUtils::Common::Import::import`.
+The implementation loads `Local::ExtUtils::Common::MM::Import` and forwards to
+its `import` method.
 
-### utilsync
+### dump_param
 
 ```perl
-Local::ExtUtils::Common->utilsync(
+Local::ExtUtils::Common->dump_param(@makemaker_args, @args);
+```
+
+Debugging method. It parses the MakeMaker-style argument list with `arg` and
+prints the resulting hash using `Dumper`.
+
+### util_sync
+
+```perl
+Local::ExtUtils::Common->util_sync(
     @makemaker_args,
     $source_file,
-    $destination_file,
 );
 ```
 
-Copies a source utility file to a destination path. The method expects the
-fixed MakeMaker argument block first, followed by the source and destination
-file names. This matches the call shape generated by the bundled postamble:
+Copies one of this distribution's helper files into the consuming
+distribution. The method expects the fixed MakeMaker argument block first,
+followed by the source file path. The destination is not passed directly.
+Instead, `util_sync` derives it from the parsed `TO_INST_PM` MakeMaker value.
 
-```perl
-$(EXTUTILS_COMMON_PM)->$method($(EXTUTILS_COMMON_PM_ARGV), @ARGV)
+The destination lookup uses the source basename and selects an installed module
+path ending in:
+
+```text
+MM/<source basename>
 ```
+
+For example, a source named `Util.pm` is matched against a target path ending
+in `MM/Util.pm`.
 
 The method validates that:
 
-- source and destination arguments are present
+- a source argument is present
+- `TO_INST_PM` can be parsed into `TO_INST_PM_AR`
+- the destination can be found in `TO_INST_PM_AR`
 - the source exists, is a regular file, and is readable
 - the destination directory exists
 - the source and destination are not the same path or same file
 
-It copies via a temporary file in the destination directory, preserves mode and
-timestamps from the source, then renames the temporary file into place.
+It reads the source and replaces the helper package name with the consuming
+distribution's `NAME`. When `VERSION_FROM` names an available source file, its
+declared `$VERSION` is parsed using MakeMaker and applied to the copied helper.
+The MakeMaker `VERSION` value is used as a fallback. The result is written
+through a temporary file in the destination directory; source mode and
+timestamps are preserved before the temporary file is renamed into place.
 
 Current behavior allows overwriting an existing destination file.
-
-### foobar
-
-```perl
-Local::ExtUtils::Common->foobar(@makemaker_args, @args);
-```
-
-Debugging/demo method. It parses the MakeMaker-style argument list with `arg`
-and prints the resulting hash using `Data::Dumper`.
 
 ## Usage Conventions
 
@@ -255,16 +277,17 @@ It is build-time infrastructure and is not intended to be part of normal module
 runtime behavior.
 
 Target methods should accept the fixed MakeMaker argument block first and use
-`Local::ExtUtils::Common::Util::arg` to separate MakeMaker fields from
+`Local::ExtUtils::Common::MM::Util::arg` to separate MakeMaker fields from
 target-specific arguments.
+
+The module supports Perl 5.8 and later.
 
 ## See Also
 
-- `Local::ExtUtils::Common::Import`
 - `Local::ExtUtils::Common::MM`
-- `Local::ExtUtils::Common::Util`
-- `Local::ExtUtils::Common::Constant`
-
+- `Local::ExtUtils::Common::MM::Import`
+- `Local::ExtUtils::Common::MM::Util`
+- `Local::ExtUtils::Common::MM::Constant`
 
 =end markdown
 
@@ -274,7 +297,7 @@ target-specific arguments.
 
 =head2 Name
 
-Local::ExtUtils::Common - top-level entry point for local MakeMaker helpers
+Local::ExtUtils::Common - top-level entry point and make-target methods for local MakeMaker helpers
 
 
 =head2 Synopsis
@@ -282,7 +305,7 @@ Local::ExtUtils::Common - top-level entry point for local MakeMaker helpers
 
  use Local::ExtUtils::Common;
  use ExtUtils::MakeMaker;
- 
+
  WriteMakefile(
      NAME         => 'Some::Module',
      VERSION_FROM => 'lib/Some/Module.pm',
@@ -293,15 +316,18 @@ Local::ExtUtils::Common - top-level entry point for local MakeMaker helpers
 =head2 Description
 
 C<Local::ExtUtils::Common> is the public entry point for the distribution. It
-loads the MakeMaker hook implementation and delegates import handling to
-C<Local::ExtUtils::Common::Import>.
+sets version metadata, imports shared utility functions from
+C<Local::ExtUtils::Common::MM::Util>, and forwards import handling to
+C<Local::ExtUtils::Common::MM::Import>.
 
-When imported without arguments, it defaults to enabling the C<const_config> and
-C<postamble> MakeMaker sections. These hooks add shared Makefile macros and
-append the common postamble template.
+When imported without arguments, it requests the C<const_config> and C<postamble>
+MakeMaker sections. The hook installer also enables C<depend> and
+C<post_initialize>, which provide the standard dependency, install-map, and
+Git-provenance behavior. Import handling is lazy-loaded and then delegated to
+C<Local::ExtUtils::Common::MM::Import>.
 
-The module also contains methods that are intended to be invoked by generated
-make targets.
+The module also contains methods intended to be invoked by generated make
+targets.
 
 
 =head2 Methods
@@ -313,32 +339,58 @@ make targets.
  use Local::ExtUtils::Common;
  use Local::ExtUtils::Common qw(const_config postamble);
 Enables MakeMaker section hooks. If no sections are supplied, C<const_config>
-and C<postamble> are enabled.
+and C<postamble> are requested; C<depend> and C<post_initialize> are installed by
+the hook manager as common defaults.
 
-The implementation forwards to C<Local::ExtUtils::Common::Import::import>.
+The implementation loads C<Local::ExtUtils::Common::MM::Import> and forwards to
+its C<import> method.
 
 
-=head3 utilsync
+=head3 dump_param
 
 
- Local::ExtUtils::Common->utilsync(
+ Local::ExtUtils::Common->dump_param(@makemaker_args, @args);
+Debugging method. It parses the MakeMaker-style argument list with C<arg> and
+prints the resulting hash using C<Dumper>.
+
+
+=head3 util_sync
+
+
+ Local::ExtUtils::Common->util_sync(
      @makemaker_args,
      $source_file,
-     $destination_file,
  );
-Copies a source utility file to a destination path. The method expects the
-fixed MakeMaker argument block first, followed by the source and destination
-file names. This matches the call shape generated by the bundled postamble:
+Copies one of this distribution's helper files into the consuming
+distribution. The method expects the fixed MakeMaker argument block first,
+followed by the source file path. The destination is not passed directly.
+Instead, C<util_sync> derives it from the parsed C<TO_INST_PM> MakeMaker value.
+
+The destination lookup uses the source basename and selects an installed module
+path ending in:
 
 
- $(EXTUTILS_COMMON_PM)->$method($(EXTUTILS_COMMON_PM_ARGV), @ARGV)
+ MM/<source basename>
+For example, a source named C<Util.pm> is matched against a target path ending
+in C<MM/Util.pm>.
+
 The method validates that:
 
 =over
 
 =item -
 
-source and destination arguments are present
+a source argument is present
+
+
+=item -
+
+C<TO_INST_PM> can be parsed into C<TO_INST_PM_AR>
+
+
+=item -
+
+the destination can be found in C<TO_INST_PM_AR>
 
 
 =item -
@@ -358,18 +410,14 @@ the source and destination are not the same path or same file
 
 =back
 
-It copies via a temporary file in the destination directory, preserves mode and
-timestamps from the source, then renames the temporary file into place.
+It reads the source and replaces the helper package name with the consuming
+distribution's C<NAME>. When C<VERSION_FROM> names an available source file, its
+declared C<$VERSION> is parsed using MakeMaker and applied to the copied helper.
+The MakeMaker C<VERSION> value is used as a fallback. The result is written
+through a temporary file in the destination directory; source mode and
+timestamps are preserved before the temporary file is renamed into place.
 
 Current behavior allows overwriting an existing destination file.
-
-
-=head3 foobar
-
-
- Local::ExtUtils::Common->foobar(@makemaker_args, @args);
-Debugging/demo method. It parses the MakeMaker-style argument list with C<arg>
-and prints the resulting hash using C<Data::Dumper>.
 
 
 =head2 Usage Conventions
@@ -379,8 +427,10 @@ It is build-time infrastructure and is not intended to be part of normal module
 runtime behavior.
 
 Target methods should accept the fixed MakeMaker argument block first and use
-C<Local::ExtUtils::Common::Util::arg> to separate MakeMaker fields from
+C<Local::ExtUtils::Common::MM::Util::arg> to separate MakeMaker fields from
 target-specific arguments.
+
+The module supports Perl 5.8 and later.
 
 
 =head2 See Also
@@ -389,22 +439,22 @@ target-specific arguments.
 
 =item -
 
-C<Local::ExtUtils::Common::Import>
-
-
-=item -
-
 C<Local::ExtUtils::Common::MM>
 
 
 =item -
 
-C<Local::ExtUtils::Common::Util>
+C<Local::ExtUtils::Common::MM::Import>
 
 
 =item -
 
-C<Local::ExtUtils::Common::Constant>
+C<Local::ExtUtils::Common::MM::Util>
+
+
+=item -
+
+C<Local::ExtUtils::Common::MM::Constant>
 
 
 =back

@@ -32,8 +32,7 @@ use Local::ExtUtils::Common::MM::Constant;
 use ExtUtils::MakeMaker;
 use Software::LicenseUtils;
 use File::Basename qw(basename);
-use File::Copy qw(copy);
-use Cwd qw(abs_path);
+use Tie::File;
 
 
 #  Version information in a formate suitable for CPAN etc. Must be
@@ -66,6 +65,16 @@ sub import {
     msg("initializing $class import");
 
 
+    #  Remember extension activation order for generated PERLRUN commands
+    #
+    {
+        no warnings qw(once);
+        push(@MY::ExtUtils_MM_Import_Order, $class)
+            unless grep {$class eq $_} @MY::ExtUtils_MM_Import_Order;
+        $MY::ExtUtils_MM_Import_Tag{$class}=[@section];
+    }
+
+
     #  Get params, bless self ref and remember import tags spec'd for later
     #  re-use
     #
@@ -83,7 +92,7 @@ sub import {
     #  Sections to augment with additional targets
     #
     {   no warnings qw(redefine once);
-        foreach my $section (qw(const_config depend postamble), @section) {
+        foreach my $section (qw(const_config depend postamble post_initialize), @section) {
             next if $self{$section};
             $self{$section} =*{"ExtUtils::MM::${section}"}{CODE}; # unless (*{"ExtUtils::MM::${section}"}{CODE} eq \&{$section});
             $self{$section} ||= do {
@@ -125,18 +134,13 @@ sub const_config {
 
     #  Import Constants into macros
     #
-    while (my ($key, $value)=each %{sprintf('%s::Constant::Constant', ref($self))}) {
+    my $constant_hr=\%{sprintf('%s::MM::Constant::Constant', ref($self))};
+    foreach my $key (keys %{$constant_hr}) {
 
         #  Update macros with our config
         #
-        msg("add macro: $key, value: $value");
-        $mm_or->{'macro'}{$key}=$value;
-
-    }
-    while (my ($key, $value)=each %{sprintf('%s::MM::Constant::Constant', ref($self))}) {
-
-        #  Update macros with our config
-        #
+        next if $key eq 'MM_PREFIX';
+        my $value=$constant_hr->{$key};
         msg("add macro: $key, value: $value");
         $mm_or->{'macro'}{$key}=$value;
 
@@ -145,34 +149,29 @@ sub const_config {
 
     #   Update license data. Get license type and author
     #
-    my $license=$mm_or->{'LICENSE'} ||
-        return err('no license specified in Makefile');
-    my @author=@{
-        $mm_or->{'AUTHOR'}
-            ||
-            return err('no author specified in Makefile')};
+    my $license=$mm_or->{'LICENSE'};
+    my @author=@{$mm_or->{'AUTHOR'} || []};
     my $author=shift(@author);
 
 
-    #  Choose appropriate module
+    #  Publish supplied values and enrich complete license metadata
     #
-    my @license_module=Software::LicenseUtils->guess_license_from_meta_key($license);
-    @license_module ||
-        return err("unable to determine correct license module from string: $license");
-    (@license_module > 1) &&
-        return err("ambiguous license string: $license, resolves to %s", join(',', @license_module));
-    my $license_or=(shift @license_module)->new({holder => $author});
-
-
-    #  Generate data later used in META files
-    #
-    @{$mm_or->{'macro'}}{qw(LICENSE AUTHOR)}=($license, $author);
-    $mm_or->{'META_MERGE'}{'resources'}{'license'}=$license_or->url();
+    $mm_or->{'macro'}{'LICENSE'}=$license if defined($license) && length($license);
+    $mm_or->{'macro'}{'AUTHOR'}=$author if defined($author) && length($author);
+    if ($license && $author) {
+        my @license_module=Software::LicenseUtils->guess_license_from_meta_key($license);
+        @license_module ||
+            return err("unable to determine correct license module from string: $license");
+        (@license_module > 1) &&
+            return err("ambiguous license string: $license, resolves to %s", join(',', @license_module));
+        my $license_or=(shift @license_module)->new({holder => $author});
+        $mm_or->{'META_MERGE'}{'resources'}{'license'}=$license_or->url();
+    }
 
 
     #  Now construct final PERLRUN string
     #
-    my $perlrun=&perlrun($self);
+    my $perlrun=&perlrun($self, $mm_or);
     $mm_or->{'PERLRUN'}=$perlrun;
 
 
@@ -207,10 +206,13 @@ sub depend {
     my $depend=$self->{$section}($mm_or, @param);
 
 
-    #  If nothing generate default
+    #  Add VERSION_FROM without replacing existing dependencies
     #
-    if (!$depend && $mm_or->{'VERSION_FROM'}) {
-        $depend='Makefile : $(VERSION_FROM)';
+    $depend='' unless defined($depend);
+    if ($mm_or->{'VERSION_FROM'} &&
+        $depend!~/^Makefile\s*:[^\n]*\$\(VERSION_FROM\)/m) {
+        $depend.=$/ if length($depend) && substr($depend, -1) ne $/;
+        $depend.='Makefile : $(VERSION_FROM)'.$/;
     }
     return $depend;
 
@@ -244,8 +246,20 @@ sub postamble {
         msg('using template: %s', basename($patch_fn));
         
 
-        #  Open it and slurp in
+        #  Generate a platform-safe target command and append the template
         #
+        my $constant_hr=\%{sprintf('%s::MM::Constant::Constant', ref($self))};
+        my $mm_prefix=$constant_hr->{'MM_PREFIX'} || mm_prefix(ref($self));
+        my $pm_macro="${mm_prefix}_PM";
+        my $argv_macro="${mm_prefix}_PM_ARGV";
+        my $target_macro="${mm_prefix}_PM_TARGET";
+        my $pm_target=$mm_or->oneliner(sprintf(
+            'my $method=shift(@ARGV); $(%s)->$method($(%s), @ARGV)',
+            $pm_macro,
+            $argv_macro
+        ));
+        $pm_target=~s/^\$\(ABSPERLRUN\)/\$\(PERLRUN\) -M\$\($pm_macro\)/;
+        $postamble.="$target_macro=$pm_target$/";
         $postamble.=slurp($patch_fn);
         
 
@@ -259,8 +273,6 @@ sub postamble {
 }
 
 
-#  Reference sections below, not used yet
-#
 sub post_initialize {
 
 
@@ -281,27 +293,33 @@ sub post_initialize {
     $mm_or->{'PM'}{'LICENSE'}='$(INST_LIBDIR)/$(BASEEXT)/LICENSE' if -e 'LICENSE';
     
     
-    #  Add git ref if needed
-    #
-    if (grep {$mm_or->{'VERSION_FROM'} eq $_} @{$mm_or->{'EXE_FILES'}}) {
-        push @{$mm_or->{'EXE_FILES'}}, $mm_or->{'VERSION_FROM'}.'.sha';
-    }
-    
-    
     #  Don't install docs/tmp files etc.
     #
-    my %pm=map { $_=>$mm_or->{'PM'}{$_} } grep { !/\.(?:md|xml|pod|bak|tmp|0)$/ } keys %{$mm_or->{'PM'}};
+    my %pm=map { $_=>$mm_or->{'PM'}{$_} } grep { !/\.(?:md|xml|pod|bak|tmp|new|old|ref|0|1)$/ } keys %{$mm_or->{'PM'}};
     $mm_or->{'PM'}=\%pm;
     
     
-    #  Update Git Ref in file if needed/available
+    #  Update and install Git ref if needed/available
     #
     my $devnull=File::Spec->devnull();
-    if (my $git_version=qx(git rev-parse --short HEAD 2>$devnull)) {
-        chomp $git_version;
-        require Tie::File;
-        tie my @lines, 'Tie::File', $mm_or->{'VERSION_FROM'} . '.sha' || die "error on Tie::File, $!";
-        $lines[0]=$git_version;
+    my $version_from_fn=$mm_or->{'VERSION_FROM'};
+    my $git_ref_fn=$version_from_fn && "${version_from_fn}.sha";
+    if ($version_from_fn && -f $version_from_fn &&
+        (my $git_version=qx(git rev-parse --short HEAD 2>$devnull)) && !$?) {
+        chomp($git_version);
+        tie(my @lines, 'Tie::File', $git_ref_fn) ||
+            die("error on Tie::File, $!");
+        @lines=($git_version)
+            unless @lines==1 && $lines[0] eq $git_version;
+    }
+    if ($git_ref_fn && -f $git_ref_fn) {
+        if ($mm_or->{'PM'}{$version_from_fn}) {
+            $mm_or->{'PM'}{$git_ref_fn}=$mm_or->{'PM'}{$version_from_fn}.'.sha';
+        }
+        elsif (grep {$version_from_fn eq $_} @{$mm_or->{'EXE_FILES'}}) {
+            (my $git_ref_base_fn=$git_ref_fn)=~s{^.*[/\\]}{};
+            $mm_or->{'PM'}{$git_ref_fn}='$(INST_SCRIPT)/'.$git_ref_base_fn;
+        }
     }
     
     #  Done
@@ -311,36 +329,13 @@ sub post_initialize {
 }
 
 
-sub init_main {
+#  Construct a default Makefile macro prefix from an extension class
+#
+sub mm_prefix {
 
-    #  Strip .pl, .sh extension from script files before installing
-    #
-    my ($self, $mm_or, @param)=@_;
-    (my $section = (caller(0))[3]) =~ s/^.*:://;
-    msg("generating %s $section", ref($self));
-
-
-    #  Get original section
-    #
-    my $init_main=$self->{$section}($mm_or, @param);
-
-
-    #  Now fix files
-    #
-    my @fn;
-    foreach my $fn (@{$mm_or->{'EXE_FILES'}}) {
-        (my $fn_new=$fn)=~s/\.(?:pl|sh)$//;
-        if ($fn_new ne $fn) {
-            -f $fn_new || do { eval{symlink(abs_path($fn), $fn_new)} || copy(abs_path($fn), $fn_new) }
-        }
-        push @fn, $fn_new;
-    }
-    $mm_or->{'EXE_FILES'}=\@fn;
-    
-    
-    #  And return
-    #
-    return $init_main;
+    my $class=shift();
+    $class=~s/::/_/g;
+    return uc($class)
 
 }
 
@@ -365,188 +360,376 @@ __END__
 
 =begin markdown
 
-# Local::ExtUtils::Common::Import
+# Local::ExtUtils::Common::MM::Import
 
 ## Name
 
-Local::ExtUtils::Common::Import - import-time MakeMaker section hook manager
+Local::ExtUtils::Common::MM::Import - MakeMaker hook installer and active section implementations
 
 ## Synopsis
-
-```perl
-use Local::ExtUtils::Common qw(const_config postamble);
-```
-
-Usually this module is not used directly. It is invoked by
-`Local::ExtUtils::Common`.
-
-## Description
-
-`Local::ExtUtils::Common::Import` installs the MakeMaker hooks requested by the
-caller. For each requested MakeMaker section, it finds and stores the original
-implementation, then replaces the corresponding `ExtUtils::MM::*` method with
-a wrapper that calls this distribution's implementation.
-
-For example, requesting `postamble` causes calls to
-`ExtUtils::MM::postamble` to be routed to:
-
-```perl
-Local::ExtUtils::Common::MM::postamble(...)
-```
-
-The original MakeMaker method is saved in the hook object's internal hash so
-the replacement can call it and append or modify the result.
-
-## Import Behavior
-
-```perl
-Local::ExtUtils::Common::Import->import(@sections);
-```
-
-The import process:
-
-1. Requires `ExtUtils::MakeMaker`.
-2. Builds a list of active `ExtUtils::MM::*` classes from `@ExtUtils::MM::ISA`.
-3. For each requested section, locates the original implementation.
-4. Stores the original code reference.
-5. Replaces `ExtUtils::MM::$section` with a wrapper method.
-
-The wrapper dispatches to:
-
-```perl
-<importing class>::MM::<section>
-```
-
-For this distribution, that normally means `Local::ExtUtils::Common::MM`.
-
-## Usage Conventions
-
-This module is part of the import mechanism and is normally loaded indirectly.
-Callers should prefer:
 
 ```perl
 use Local::ExtUtils::Common;
 ```
 
-or:
-
 ```perl
 use Local::ExtUtils::Common qw(const_config postamble);
 ```
 
-Because it modifies `ExtUtils::MM` symbol table entries, it should be used only
-during Makefile generation.
+Usually this module is not used directly. It is loaded by
+`Local::ExtUtils::Common::import`.
+
+## Description
+
+`Local::ExtUtils::Common::MM::Import` installs and implements the current
+`ExtUtils::MakeMaker` hooks for this distribution.
+
+It only performs hook installation while running under a `Makefile.PL` process.
+If imported outside that context, it returns without modifying `ExtUtils::MM`.
+
+The module always considers `const_config`, `depend`, `postamble`, and
+`post_initialize`, and also honors any additional section names passed by the
+caller. For each section, it saves the original MakeMaker implementation and
+then replaces `ExtUtils::MM::$section` with a wrapper.
+
+If a method named `<importing class>::MM::<section>` exists, the wrapper calls
+that method. Otherwise it calls the section method implemented in this module.
+
+## Import Behavior
+
+```perl
+Local::ExtUtils::Common::MM::Import->import(@sections);
+```
+
+The import process:
+
+1. Returns immediately if this class has already been loaded.
+2. Returns immediately unless the current process name matches `Makefile.PL`.
+3. Builds a list of active `ExtUtils::MM::*` classes from `@ExtUtils::MM::ISA`.
+4. Saves the original implementation for each requested section.
+5. Replaces the matching `ExtUtils::MM::*` symbol with a wrapper.
+
+The original method is stored in the hook object's internal hash and is called
+by the replacement section methods before augmenting the result.
+
+The importing class and requested section names are also recorded in activation
+order. Generated `PERLRUN` commands use this registry so chained extensions are
+reloaded once each and in the same order.
+
+## Section Methods
+
+### const_config
+
+```perl
+Local::ExtUtils::Common::MM::Import::const_config($hook, $mm, @args);
+```
+
+Calls the original MakeMaker `const_config`, then copies constants from
+`Local::ExtUtils::Common::MM::Constant` into the Makefile macro table.
+`MM_PREFIX` is private hook configuration and is not emitted as a Makefile
+macro.
+
+It publishes supplied license metadata:
+
+- copies `LICENSE` and the first `AUTHOR` into the macro table when supplied
+- uses `Software::LicenseUtils` to resolve the license when both are supplied
+- writes the resulting URL into `META_MERGE.resources.license`
+
+Neither `LICENSE` nor `AUTHOR` is required by this helper.
+
+The method then installs a global `PERLRUN` command which preserves loaded
+MakeMaker extensions and local include paths. Include arguments are quoted
+through the active MakeMaker implementation. It also stores `DIST_DEFAULT` in
+the `DIST_DEFAULT_TARGET` macro.
+
+### depend
+
+```perl
+Local::ExtUtils::Common::MM::Import::depend($hook, $mm, @args);
+```
+
+Calls the original MakeMaker `depend` section. When `VERSION_FROM` is set, it
+appends the following dependency unless it is already present:
+
+```make
+Makefile : $(VERSION_FROM)
+```
+
+### postamble
+
+```perl
+Local::ExtUtils::Common::MM::Import::postamble($hook, $mm, @args);
+```
+
+Calls the original MakeMaker `postamble`, then appends the configured template
+when `TEMPLATE_POSTAMBLE_FN` is available in this module's namespace.
+
+The module uses `MM_PREFIX` from the importing class's `MM::Constant` package
+when naming its command macro. If it is absent, the class name is uppercased
+and `::` is replaced with `_`. MakeMaker's `oneliner` method generates the
+platform-specific Perl command. The command deliberately uses the global
+`PERLRUN` macro so the same extension environment is available to generated
+targets, then explicitly reloads the dispatch module belonging to this prefix.
+This keeps the target callable when a subsequently loaded extension replaces
+the shared `PERLRUN` value.
+
+The current bundled template is:
+
+```text
+lib/Local/ExtUtils/Common/MM/postamble.inc
+```
+
+### post_initialize
+
+```perl
+Local::ExtUtils::Common::MM::Import::post_initialize($hook, $mm, @args);
+```
+
+Calls the original MakeMaker `post_initialize` section, then:
+
+- installs `LICENSE` when it exists
+- excludes `.md`, `.xml`, `.pod`, `.bak`, `.tmp`, `.new`, `.old`, `.ref`,
+  `.0`, and `.1` sources from the install map
+- records the current short Git revision beside `VERSION_FROM` when Git and
+  the source file are available
+- avoids rewriting an unchanged Git revision file
+- installs the revision file beside its module or executable
+
+Executable names remain exactly as declared in `EXE_FILES`; the helper does not
+remove `.pl` or `.sh` extensions.
+
+## Usage Conventions
+
+Callers should normally use `Local::ExtUtils::Common`, not this module
+directly.
+
+Because the module modifies `ExtUtils::MM` symbol table entries, it should be
+used only during Makefile generation.
 
 ## Diagnostics
 
 The module emits formatted status messages through
-`Local::ExtUtils::Common::Util::msg`. It dies if no `ExtUtils::MM` inheritance
-chain can be found.
+`Local::ExtUtils::Common::MM::Util::msg`. It dies if no `ExtUtils::MM`
+inheritance chain can be found, if a supplied license string cannot be resolved
+unambiguously, or if a Git-revision sidecar cannot be opened.
 
 ## See Also
 
 - `Local::ExtUtils::Common`
 - `Local::ExtUtils::Common::MM`
+- `Local::ExtUtils::Common::MM::Constant`
+- `Local::ExtUtils::Common::MM::Util`
 - `ExtUtils::MakeMaker`
-
 
 =end markdown
 
 
-=head1 Local::ExtUtils::Common::Import
+=head1 Local::ExtUtils::Common::MM::Import
 
 
 =head2 Name
 
-Local::ExtUtils::Common::Import - import-time MakeMaker section hook manager
+Local::ExtUtils::Common::MM::Import - MakeMaker hook installer and active section implementations
 
 
 =head2 Synopsis
 
 
+ use Local::ExtUtils::Common;
+
  use Local::ExtUtils::Common qw(const_config postamble);
-Usually this module is not used directly. It is invoked by
-C<Local::ExtUtils::Common>.
+Usually this module is not used directly. It is loaded by
+C<Local::ExtUtils::Common::import>.
 
 
 =head2 Description
 
-C<Local::ExtUtils::Common::Import> installs the MakeMaker hooks requested by the
-caller. For each requested MakeMaker section, it finds and stores the original
-implementation, then replaces the corresponding C<ExtUtils::MM::*> method with
-a wrapper that calls this distribution's implementation.
+C<Local::ExtUtils::Common::MM::Import> installs and implements the current
+C<ExtUtils::MakeMaker> hooks for this distribution.
 
-For example, requesting C<postamble> causes calls to
-C<ExtUtils::MM::postamble> to be routed to:
+It only performs hook installation while running under a C<Makefile.PL> process.
+If imported outside that context, it returns without modifying C<ExtUtils::MM>.
 
+The module always considers C<const_config>, C<depend>, C<postamble>, and
+C<post_initialize>, and also honors any additional section names passed by the
+caller. For each section, it saves the original MakeMaker implementation and
+then replaces C<ExtUtils::MM::$section> with a wrapper.
 
- Local::ExtUtils::Common::MM::postamble(...)
-The original MakeMaker method is saved in the hook object's internal hash so
-the replacement can call it and append or modify the result.
+If a method named C<<< <importing class>::MM::<section> >>> exists, the wrapper calls
+that method. Otherwise it calls the section method implemented in this module.
 
 
 =head2 Import Behavior
 
 
- Local::ExtUtils::Common::Import->import(@sections);
+ Local::ExtUtils::Common::MM::Import->import(@sections);
 The import process:
 
 =over
 
 =item 1.
 
-Requires C<ExtUtils::MakeMaker>.
+Returns immediately if this class has already been loaded.
 
 
 =item 2.
 
-Builds a list of active C<ExtUtils::MM::*> classes from C<@ExtUtils::MM::ISA>.
+Returns immediately unless the current process name matches C<Makefile.PL>.
 
 
 =item 3.
 
-For each requested section, locates the original implementation.
+Builds a list of active C<ExtUtils::MM::*> classes from C<@ExtUtils::MM::ISA>.
 
 
 =item 4.
 
-Stores the original code reference.
+Saves the original implementation for each requested section.
 
 
 =item 5.
 
-Replaces C<ExtUtils::MM::$section> with a wrapper method.
+Replaces the matching C<ExtUtils::MM::*> symbol with a wrapper.
 
 
 =back
 
-The wrapper dispatches to:
+The original method is stored in the hook object's internal hash and is called
+by the replacement section methods before augmenting the result.
+
+The importing class and requested section names are also recorded in activation
+order. Generated C<PERLRUN> commands use this registry so chained extensions are
+reloaded once each and in the same order.
 
 
- <importing class>::MM::<section>
-For this distribution, that normally means C<Local::ExtUtils::Common::MM>.
+=head2 Section Methods
+
+
+=head3 const_config
+
+
+ Local::ExtUtils::Common::MM::Import::const_config($hook, $mm, @args);
+Calls the original MakeMaker C<const_config>, then copies constants from
+C<Local::ExtUtils::Common::MM::Constant> into the Makefile macro table.
+C<MM_PREFIX> is private hook configuration and is not emitted as a Makefile
+macro.
+
+It publishes supplied license metadata:
+
+=over
+
+=item -
+
+copies C<LICENSE> and the first C<AUTHOR> into the macro table when supplied
+
+
+=item -
+
+uses C<Software::LicenseUtils> to resolve the license when both are supplied
+
+
+=item -
+
+writes the resulting URL into C<META_MERGE.resources.license>
+
+
+=back
+
+Neither C<LICENSE> nor C<AUTHOR> is required by this helper.
+
+The method then installs a global C<PERLRUN> command which preserves loaded
+MakeMaker extensions and local include paths. Include arguments are quoted
+through the active MakeMaker implementation. It also stores C<DIST_DEFAULT> in
+the C<DIST_DEFAULT_TARGET> macro.
+
+
+=head3 depend
+
+
+ Local::ExtUtils::Common::MM::Import::depend($hook, $mm, @args);
+Calls the original MakeMaker C<depend> section. When C<VERSION_FROM> is set, it
+appends the following dependency unless it is already present:
+
+
+ Makefile : $(VERSION_FROM)
+
+=head3 postamble
+
+
+ Local::ExtUtils::Common::MM::Import::postamble($hook, $mm, @args);
+Calls the original MakeMaker C<postamble>, then appends the configured template
+when C<TEMPLATE_POSTAMBLE_FN> is available in this module's namespace.
+
+The module uses C<MM_PREFIX> from the importing class's C<MM::Constant> package
+when naming its command macro. If it is absent, the class name is uppercased
+and C<::> is replaced with C<_>. MakeMaker's C<oneliner> method generates the
+platform-specific Perl command. The command deliberately uses the global
+C<PERLRUN> macro so the same extension environment is available to generated
+targets, then explicitly reloads the dispatch module belonging to this prefix.
+This keeps the target callable when a subsequently loaded extension replaces
+the shared C<PERLRUN> value.
+
+The current bundled template is:
+
+
+ lib/Local/ExtUtils/Common/MM/postamble.inc
+
+=head3 post_initialize
+
+
+ Local::ExtUtils::Common::MM::Import::post_initialize($hook, $mm, @args);
+Calls the original MakeMaker C<post_initialize> section, then:
+
+=over
+
+=item -
+
+installs C<LICENSE> when it exists
+
+
+=item -
+
+excludes C<.md>, C<.xml>, C<.pod>, C<.bak>, C<.tmp>, C<.new>, C<.old>, C<.ref>,
+  C<.0>, and C<.1> sources from the install map
+
+
+=item -
+
+records the current short Git revision beside C<VERSION_FROM> when Git and
+  the source file are available
+
+
+=item -
+
+avoids rewriting an unchanged Git revision file
+
+
+=item -
+
+installs the revision file beside its module or executable
+
+
+=back
+
+Executable names remain exactly as declared in C<EXE_FILES>; the helper does not
+remove C<.pl> or C<.sh> extensions.
 
 
 =head2 Usage Conventions
 
-This module is part of the import mechanism and is normally loaded indirectly.
-Callers should prefer:
+Callers should normally use C<Local::ExtUtils::Common>, not this module
+directly.
 
-
- use Local::ExtUtils::Common;
-or:
-
-
- use Local::ExtUtils::Common qw(const_config postamble);
-Because it modifies C<ExtUtils::MM> symbol table entries, it should be used only
-during Makefile generation.
+Because the module modifies C<ExtUtils::MM> symbol table entries, it should be
+used only during Makefile generation.
 
 
 =head2 Diagnostics
 
 The module emits formatted status messages through
-C<Local::ExtUtils::Common::Util::msg>. It dies if no C<ExtUtils::MM> inheritance
-chain can be found.
+C<Local::ExtUtils::Common::MM::Util::msg>. It dies if no C<ExtUtils::MM>
+inheritance chain can be found, if a supplied license string cannot be resolved
+unambiguously, or if a Git-revision sidecar cannot be opened.
 
 
 =head2 See Also
@@ -561,6 +744,16 @@ C<Local::ExtUtils::Common>
 =item -
 
 C<Local::ExtUtils::Common::MM>
+
+
+=item -
+
+C<Local::ExtUtils::Common::MM::Constant>
+
+
+=item -
+
+C<Local::ExtUtils::Common::MM::Util>
 
 
 =item -
