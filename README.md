@@ -1,7 +1,7 @@
-# Local::ExtUtils::Common
+# ASPEER::MakeMaker
 
-`Local::ExtUtils::Common` is a local helper distribution for sharing
-`ExtUtils::MakeMaker` customizations across Perl modules.
+`ASPEER::MakeMaker` is the parent distribution for sharing
+`ExtUtils::MakeMaker` customizations across ASPEER MakeMaker plugins.
 
 The module is designed to be loaded from a `Makefile.PL`. On import it can
 wrap selected `ExtUtils::MakeMaker` sections, add project-specific Makefile
@@ -10,7 +10,7 @@ macros, and append a reusable postamble containing common make targets.
 ## Purpose
 
 This distribution centralizes build-time conventions that would otherwise be
-copied between local Perl distributions. In particular it provides:
+copied between plugin distributions. In particular it provides:
 
 - MakeMaker import hooks for selected Makefile generation sections.
 - A `const_config` extension that publishes shared constants as Makefile
@@ -18,8 +18,8 @@ copied between local Perl distributions. In particular it provides:
 - A `postamble` extension that appends common make targets from a template.
 - A `post_initialize` extension that controls the install map and records the
   Git revision beside `VERSION_FROM`.
-- A `util_sync` target and method for copying this module's utility files into
-  another distribution.
+- A retained `util_sync` target and method for copying the shared utility files
+  into an older or standalone distribution when required.
 - Shared logging, file, argument-parsing, and Perl runtime construction helpers.
 
 ## Basic Usage
@@ -27,7 +27,7 @@ copied between local Perl distributions. In particular it provides:
 In a consuming `Makefile.PL`, load the module before calling `WriteMakefile`:
 
 ```perl
-use Local::ExtUtils::Common;
+use ASPEER::MakeMaker;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -36,12 +36,12 @@ WriteMakefile(
 );
 ```
 
-With no import arguments, `Local::ExtUtils::Common` enables the `const_config`,
+With no import arguments, `ASPEER::MakeMaker` enables the `const_config`,
 `depend`, `postamble`, and `post_initialize` hooks. A caller may also request
 additional sections explicitly:
 
 ```perl
-use Local::ExtUtils::Common qw(const_config postamble);
+use ASPEER::MakeMaker qw(const_config postamble);
 ```
 
 The generated postamble dispatches make targets back into the module through a
@@ -59,27 +59,55 @@ matching `.sha` provenance file is updated only when its content changes and is
 installed beside the module or script. Executable filenames are always kept as
 declared in `EXE_FILES`.
 
+## Plugin Inheritance
+
+A plugin inherits the public entry point and MakeMaker namespace, imports the
+shared utility functions, and supplies its own constants and target methods:
+
+```perl
+package ASPEER::MakeMaker::Example;
+use ASPEER::MakeMaker ();
+use ASPEER::MakeMaker::Example::MM ();
+use vars qw(@ISA);
+@ISA=qw(ASPEER::MakeMaker);
+```
+
+```perl
+package ASPEER::MakeMaker::Example::MM;
+use ASPEER::MakeMaker::MM ();
+use ASPEER::MakeMaker::MM::Util;
+use vars qw(@ISA);
+@ISA=qw(ASPEER::MakeMaker::MM);
+```
+
+The shared import layer reads the importing plugin's `MM::Constant` package and
+postamble template. This gives each plugin its own Makefile macro prefix and
+targets while retaining the common lifecycle hooks and additive `PERLRUN`
+behavior.
+
 ## Generated Targets
 
-The bundled postamble currently defines `util_sync`. That target calls the
+The parent's bundled postamble defines `util_sync`. That target calls the
 module's `util_sync` method twice:
 
-- once to copy `Util.pm` to `$(UPDATE_DEST_UTIL_FN)`
-- once to copy `Import.pm` to `$(UPDATE_DEST_IMPORT_FN)`
+- once for `Util.pm`
+- once for `Import.pm`
 
-After each copy, the target rewrites occurrences of `Local::ExtUtils::Common`
+After each copy, the target rewrites occurrences of `ASPEER::MakeMaker`
 in the destination file to the consuming distribution's `$(NAME)`.
 
-The destination macro values are expected to be supplied by the consuming
-distribution, usually through local constant overrides.
+The destination is derived from the consuming distribution's `TO_INST_PM`
+install map. Current child plugins inherit these modules directly and do not
+run `util_sync`; the target remains available for a future vendoring or
+standalone maintenance use case.
 
 ## Local Overrides
 
-`Local::ExtUtils::Common::Constant` loads default constants from the module and
+`ASPEER::MakeMaker::MM::Constant` loads default constants from the module and
 then applies optional local overrides from:
 
 - a `.local` file next to `Constant.pm`
-- `~/.Local::ExtUtils::Common::Constant.local`
+- `~/.ASPEER::MakeMaker::MM::Constant.local`
 
 Each override file is expected to evaluate to a hash reference.
 
@@ -87,11 +115,11 @@ Each override file is expected to evaluate to a hash reference.
 
 The module-level sidecar documents describe the individual pieces:
 
-- `lib/Local/ExtUtils/Common.pm.md`
-- `lib/Local/ExtUtils/Common/MM/Import.pm.md`
-- `lib/Local/ExtUtils/Common/MM.pm.md`
-- `lib/Local/ExtUtils/Common/MM/Util.pm.md`
-- `lib/Local/ExtUtils/Common/MM/Constant.pm.md`
+- `lib/ASPEER/MakeMaker.pm.md`
+- `lib/ASPEER/MakeMaker/MM/Import.pm.md`
+- `lib/ASPEER/MakeMaker/MM.pm.md`
+- `lib/ASPEER/MakeMaker/MM/Util.pm.md`
+- `lib/ASPEER/MakeMaker/MM/Constant.pm.md`
 
 ## Notes
 

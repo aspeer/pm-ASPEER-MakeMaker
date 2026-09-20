@@ -1,25 +1,25 @@
-# Local::ExtUtils::Common::MM::Import
+# ASPEER::MakeMaker::MM::Import
 
 ## Name
 
-Local::ExtUtils::Common::MM::Import - MakeMaker hook installer and active section implementations
+ASPEER::MakeMaker::MM::Import - MakeMaker hook installer and active section implementations
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common;
+use ASPEER::MakeMaker;
 ```
 
 ```perl
-use Local::ExtUtils::Common qw(const_config postamble);
+use ASPEER::MakeMaker qw(const_config postamble);
 ```
 
 Usually this module is not used directly. It is loaded by
-`Local::ExtUtils::Common::import`.
+`ASPEER::MakeMaker::import`.
 
 ## Description
 
-`Local::ExtUtils::Common::MM::Import` installs and implements the current
+`ASPEER::MakeMaker::MM::Import` installs and implements the current
 `ExtUtils::MakeMaker` hooks for this distribution.
 
 It only performs hook installation while running under a `Makefile.PL` process.
@@ -36,7 +36,7 @@ that method. Otherwise it calls the section method implemented in this module.
 ## Import Behavior
 
 ```perl
-Local::ExtUtils::Common::MM::Import->import(@sections);
+ASPEER::MakeMaker::MM::Import->import(@sections);
 ```
 
 The import process:
@@ -59,11 +59,11 @@ reloaded once each and in the same order.
 ### const_config
 
 ```perl
-Local::ExtUtils::Common::MM::Import::const_config($hook, $mm, @args);
+ASPEER::MakeMaker::MM::Import::const_config($hook, $mm, @args);
 ```
 
 Calls the original MakeMaker `const_config`, then copies constants from
-`Local::ExtUtils::Common::MM::Constant` into the Makefile macro table.
+`ASPEER::MakeMaker::MM::Constant` into the Makefile macro table.
 `MM_PREFIX` is private hook configuration and is not emitted as a Makefile
 macro.
 
@@ -83,7 +83,7 @@ the `DIST_DEFAULT_TARGET` macro.
 ### depend
 
 ```perl
-Local::ExtUtils::Common::MM::Import::depend($hook, $mm, @args);
+ASPEER::MakeMaker::MM::Import::depend($hook, $mm, @args);
 ```
 
 Calls the original MakeMaker `depend` section. When `VERSION_FROM` is set, it
@@ -96,11 +96,11 @@ Makefile : $(VERSION_FROM)
 ### postamble
 
 ```perl
-Local::ExtUtils::Common::MM::Import::postamble($hook, $mm, @args);
+ASPEER::MakeMaker::MM::Import::postamble($hook, $mm, @args);
 ```
 
-Calls the original MakeMaker `postamble`, then appends the configured template
-when `TEMPLATE_POSTAMBLE_FN` is available in this module's namespace.
+Calls the original MakeMaker `postamble`, then appends the template named by
+`TEMPLATE_POSTAMBLE_FN` in the importing class's `MM::Constant` package.
 
 The module uses `MM_PREFIX` from the importing class's `MM::Constant` package
 when naming its command macro. If it is absent, the class name is uppercased
@@ -111,16 +111,16 @@ targets, then explicitly reloads the dispatch module belonging to this prefix.
 This keeps the target callable when a subsequently loaded extension replaces
 the shared `PERLRUN` value.
 
-The current bundled template is:
+The parent class's bundled template is:
 
 ```text
-lib/Local/ExtUtils/Common/MM/postamble.inc
+lib/ASPEER/MakeMaker/MM/postamble.inc
 ```
 
 ### post_initialize
 
 ```perl
-Local::ExtUtils::Common::MM::Import::post_initialize($hook, $mm, @args);
+ASPEER::MakeMaker::MM::Import::post_initialize($hook, $mm, @args);
 ```
 
 Calls the original MakeMaker `post_initialize` section, then:
@@ -138,7 +138,7 @@ remove `.pl` or `.sh` extensions.
 
 ## Usage Conventions
 
-Callers should normally use `Local::ExtUtils::Common`, not this module
+Callers should normally use `ASPEER::MakeMaker`, not this module
 directly.
 
 Because the module modifies `ExtUtils::MM` symbol table entries, it should be
@@ -147,14 +147,14 @@ used only during Makefile generation.
 ## Diagnostics
 
 The module emits formatted status messages through
-`Local::ExtUtils::Common::MM::Util::msg`. It dies if no `ExtUtils::MM`
+`ASPEER::MakeMaker::MM::Util::msg`. It dies if no `ExtUtils::MM`
 inheritance chain can be found, if a supplied license string cannot be resolved
 unambiguously, or if a Git-revision sidecar cannot be opened.
 
 ## See Also
 
-- `Local::ExtUtils::Common`
-- `Local::ExtUtils::Common::MM`
-- `Local::ExtUtils::Common::MM::Constant`
-- `Local::ExtUtils::Common::MM::Util`
+- `ASPEER::MakeMaker`
+- `ASPEER::MakeMaker::MM`
+- `ASPEER::MakeMaker::MM::Constant`
+- `ASPEER::MakeMaker::MM::Util`
 - `ExtUtils::MakeMaker`

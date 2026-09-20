@@ -1,5 +1,5 @@
 #
-#  This file is part of Local::ExtUtils::Common.
+#  This file is part of ASPEER::MakeMaker.
 #
 #  This software is copyright (c) 2026 by Andrew Speer <andrew.speer.com.au>.
 #
@@ -10,7 +10,7 @@
 #
 #  <http://dev.perl.org/licenses/>
 #
-package Local::ExtUtils::Common::MM;
+package ASPEER::MakeMaker::MM;
 
 
 #  Compiler Pragma
@@ -22,8 +22,8 @@ use vars qw($VERSION);
 
 #  External Packages
 #
-use Local::ExtUtils::Common::MM::Util;
-use Local::ExtUtils::Common::MM::Constant;
+use ASPEER::MakeMaker::MM::Util;
+use ASPEER::MakeMaker::MM::Constant;
 
 
 #  Version information in a formate suitable for CPAN etc. Must be
@@ -41,38 +41,38 @@ __END__
 
 =begin markdown
 
-# Local::ExtUtils::Common::MM
+# ASPEER::MakeMaker::MM
 
 ## Name
 
-Local::ExtUtils::Common::MM - namespace module for MakeMaker helper support
+ASPEER::MakeMaker::MM - namespace module for MakeMaker helper support
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common::MM;
+use ASPEER::MakeMaker::MM;
 ```
 
-This module is normally loaded indirectly by `Local::ExtUtils::Common` and
-`Local::ExtUtils::Common::MM::Import`.
+This module is normally loaded indirectly by `ASPEER::MakeMaker` and
+`ASPEER::MakeMaker::MM::Import`.
 
 ## Description
 
-`Local::ExtUtils::Common::MM` currently acts as a namespace and dependency
+`ASPEER::MakeMaker::MM` currently acts as a namespace and dependency
 anchor for the MakeMaker helper implementation. It loads:
 
-- `Local::ExtUtils::Common::MM::Util`
-- `Local::ExtUtils::Common::MM::Constant`
+- `ASPEER::MakeMaker::MM::Util`
+- `ASPEER::MakeMaker::MM::Constant`
 
 The active MakeMaker section wrappers and replacement methods are implemented
-in `Local::ExtUtils::Common::MM::Import`.
+in `ASPEER::MakeMaker::MM::Import`.
 
 ## Methods
 
 ### const_config0
 
 ```perl
-Local::ExtUtils::Common::MM::const_config0($hook, $mm, @args);
+ASPEER::MakeMaker::MM::const_config0($hook, $mm, @args);
 ```
 
 Legacy or parked implementation of a `const_config` wrapper. It calls the
@@ -80,19 +80,19 @@ saved original MakeMaker section, copies constants into the Makefile macro
 table, and updates `PERLRUN`.
 
 The active implementation is currently
-`Local::ExtUtils::Common::MM::Import::const_config`.
+`ASPEER::MakeMaker::MM::Import::const_config`.
 
 ### postamble0
 
 ```perl
-Local::ExtUtils::Common::MM::postamble0($hook, $mm, @args);
+ASPEER::MakeMaker::MM::postamble0($hook, $mm, @args);
 ```
 
 Legacy or parked implementation of a `postamble` wrapper. It calls the saved
 original MakeMaker section and appends the configured postamble template.
 
 The active implementation is currently
-`Local::ExtUtils::Common::MM::Import::postamble`.
+`ASPEER::MakeMaker::MM::Import::postamble`.
 
 ## Usage Conventions
 
@@ -100,61 +100,61 @@ Do not call this module's methods directly from a `Makefile.PL`. Use the
 top-level entry point:
 
 ```perl
-use Local::ExtUtils::Common;
+use ASPEER::MakeMaker;
 ```
 
 New active MakeMaker hook behavior should generally be documented against
-`Local::ExtUtils::Common::MM::Import`, since that module installs and provides
+`ASPEER::MakeMaker::MM::Import`, since that module installs and provides
 the current hook implementations.
 
 ## See Also
 
-- `Local::ExtUtils::Common`
-- `Local::ExtUtils::Common::MM::Import`
-- `Local::ExtUtils::Common::MM::Util`
-- `Local::ExtUtils::Common::MM::Constant`
+- `ASPEER::MakeMaker`
+- `ASPEER::MakeMaker::MM::Import`
+- `ASPEER::MakeMaker::MM::Util`
+- `ASPEER::MakeMaker::MM::Constant`
 
 
 =end markdown
 
 
-=head1 Local::ExtUtils::Common::MM
+=head1 ASPEER::MakeMaker::MM
 
 
 =head2 Name
 
-Local::ExtUtils::Common::MM - namespace module for MakeMaker helper support
+ASPEER::MakeMaker::MM - namespace module for MakeMaker helper support
 
 
 =head2 Synopsis
 
 
- use Local::ExtUtils::Common::MM;
-This module is normally loaded indirectly by C<Local::ExtUtils::Common> and
-C<Local::ExtUtils::Common::MM::Import>.
+ use ASPEER::MakeMaker::MM;
+This module is normally loaded indirectly by C<ASPEER::MakeMaker> and
+C<ASPEER::MakeMaker::MM::Import>.
 
 
 =head2 Description
 
-C<Local::ExtUtils::Common::MM> currently acts as a namespace and dependency
+C<ASPEER::MakeMaker::MM> currently acts as a namespace and dependency
 anchor for the MakeMaker helper implementation. It loads:
 
 =over
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Util>
+C<ASPEER::MakeMaker::MM::Util>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Constant>
+C<ASPEER::MakeMaker::MM::Constant>
 
 
 =back
 
 The active MakeMaker section wrappers and replacement methods are implemented
-in C<Local::ExtUtils::Common::MM::Import>.
+in C<ASPEER::MakeMaker::MM::Import>.
 
 
 =head2 Methods
@@ -163,24 +163,24 @@ in C<Local::ExtUtils::Common::MM::Import>.
 =head3 const_config0
 
 
- Local::ExtUtils::Common::MM::const_config0($hook, $mm, @args);
+ ASPEER::MakeMaker::MM::const_config0($hook, $mm, @args);
 Legacy or parked implementation of a C<const_config> wrapper. It calls the
 saved original MakeMaker section, copies constants into the Makefile macro
 table, and updates C<PERLRUN>.
 
 The active implementation is currently
-C<Local::ExtUtils::Common::MM::Import::const_config>.
+C<ASPEER::MakeMaker::MM::Import::const_config>.
 
 
 =head3 postamble0
 
 
- Local::ExtUtils::Common::MM::postamble0($hook, $mm, @args);
+ ASPEER::MakeMaker::MM::postamble0($hook, $mm, @args);
 Legacy or parked implementation of a C<postamble> wrapper. It calls the saved
 original MakeMaker section and appends the configured postamble template.
 
 The active implementation is currently
-C<Local::ExtUtils::Common::MM::Import::postamble>.
+C<ASPEER::MakeMaker::MM::Import::postamble>.
 
 
 =head2 Usage Conventions
@@ -189,9 +189,9 @@ Do not call this module's methods directly from a C<Makefile.PL>. Use the
 top-level entry point:
 
 
- use Local::ExtUtils::Common;
+ use ASPEER::MakeMaker;
 New active MakeMaker hook behavior should generally be documented against
-C<Local::ExtUtils::Common::MM::Import>, since that module installs and provides
+C<ASPEER::MakeMaker::MM::Import>, since that module installs and provides
 the current hook implementations.
 
 
@@ -201,22 +201,22 @@ the current hook implementations.
 
 =item -
 
-C<Local::ExtUtils::Common>
+C<ASPEER::MakeMaker>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Import>
+C<ASPEER::MakeMaker::MM::Import>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Util>
+C<ASPEER::MakeMaker::MM::Util>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Constant>
+C<ASPEER::MakeMaker::MM::Constant>
 
 
 =back

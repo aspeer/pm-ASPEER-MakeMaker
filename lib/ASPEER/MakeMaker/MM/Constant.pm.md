@@ -1,34 +1,34 @@
-# Local::ExtUtils::Common::MM::Constant
+# ASPEER::MakeMaker::MM::Constant
 
 ## Name
 
-Local::ExtUtils::Common::MM::Constant - exported constants and Makefile macro data
+ASPEER::MakeMaker::MM::Constant - exported constants and Makefile macro data
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common::MM::Constant qw(
-    $EXTUTILS_COMMON_PM
+use ASPEER::MakeMaker::MM::Constant qw(
+    $ASPEER_MAKEMAKER_PM
     $TEMPLATE_POSTAMBLE_FN
     $UPDATE_SOURCE_UTIL_FN
     $UPDATE_SOURCE_IMPORT_FN
     $UPDATE_SOURCE_CONSTANT_FN
-    $EXTUTILS_COMMON_PM_ARGV
+    $ASPEER_MAKEMAKER_PM_ARGV
 );
 ```
 
 ```perl
-use Local::ExtUtils::Common::MM::Constant qw(:all);
+use ASPEER::MakeMaker::MM::Constant qw(:all);
 ```
 
 ## Description
 
-`Local::ExtUtils::Common::MM::Constant` defines constants used by the
+`ASPEER::MakeMaker::MM::Constant` defines constants used by the
 MakeMaker hook layer and generated postamble targets.
 
 The constants are stored in `%Constant`, exported as scalar package variables,
 and copied into the Makefile macro table by
-`Local::ExtUtils::Common::MM::Import::const_config`.
+`ASPEER::MakeMaker::MM::Import::const_config`.
 
 ## Constants
 
@@ -39,7 +39,7 @@ It is consumed by the hook implementation and is not emitted as the generic
 Makefile macro `MM_PREFIX`. When omitted, the importing class name is
 uppercased and `::` is replaced with `_`.
 
-### EXTUTILS_COMMON_PM
+### ASPEER_MAKEMAKER_PM
 
 The module name used by generated make targets when dispatching back into this
 helper distribution.
@@ -47,7 +47,7 @@ helper distribution.
 Default:
 
 ```perl
-Local::ExtUtils::Common
+ASPEER::MakeMaker
 ```
 
 ### TEMPLATE_POSTAMBLE_FN
@@ -55,7 +55,7 @@ Local::ExtUtils::Common
 Path to the bundled postamble template:
 
 ```text
-lib/Local/ExtUtils/Common/MM/postamble.inc
+lib/ASPEER/MakeMaker/MM/postamble.inc
 ```
 
 ### UPDATE_SOURCE_UTIL_FN
@@ -72,12 +72,12 @@ use this as the source file for import helper synchronization.
 
 Path to this distribution's source `MM/Constant.pm`.
 
-### EXTUTILS_COMMON_PM_ARGV
+### ASPEER_MAKEMAKER_PM_ARGV
 
 A comma-separated Makefile macro expression that expands to the fixed argument
 block passed into generated target methods.
 
-The argument order matches `Local::ExtUtils::Common::MM::Util::arg`:
+The argument order matches `ASPEER::MakeMaker::MM::Util::arg`:
 
 - `$(NAME)`
 - `$(NAME_SYM)`
@@ -102,23 +102,18 @@ The override files must evaluate to a hash reference.
 The files are loaded in this order:
 
 1. A `.local` file beside `MM/Constant.pm`.
-2. `~/.Local::ExtUtils::Common::MM::Constant.local`.
+2. `~/.ASPEER::MakeMaker::MM::Constant.local`.
 
 Later values override earlier values.
 
 ## Export Behavior
 
 All constants are exported by default as scalar variables. They are also
-available through the `:all` export tag.
-
-The module also aliases `$_` to `%Constant` by assigning:
-
-```perl
-$_ = \%Constant;
-```
+available through the `:all` export tag. Loading the module does not alter the
+caller's `$_` value.
 
 ## See Also
 
-- `Local::ExtUtils::Common`
-- `Local::ExtUtils::Common::MM::Import`
-- `Local::ExtUtils::Common::MM::Util`
+- `ASPEER::MakeMaker`
+- `ASPEER::MakeMaker::MM::Import`
+- `ASPEER::MakeMaker::MM::Util`

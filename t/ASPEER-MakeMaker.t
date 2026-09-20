@@ -1,5 +1,5 @@
 # Before 'make install' is performed this script should be runnable with
-# 'make test'. After 'make install' it should work as 'perl Local-ExtUtils-Common.t'
+# 'make test'. After 'make install' it should work as 'perl ASPEER-MakeMaker.t'
 
 #########################
 
@@ -13,9 +13,9 @@ use File::Path qw(make_path);
 use File::Spec;
 use File::Temp qw(tempdir);
 
-BEGIN { use_ok('Local::ExtUtils::Common') };
-use Local::ExtUtils::Common::MM::Constant qw(
-    $EXTUTILS_COMMON_PM_ARGV
+BEGIN { use_ok('ASPEER::MakeMaker') };
+use ASPEER::MakeMaker::MM::Constant qw(
+    $ASPEER_MAKEMAKER_PM_ARGV
     $TEMPLATE_POSTAMBLE_FN
     $UPDATE_SOURCE_UTIL_FN
 );
@@ -26,13 +26,13 @@ use Local::ExtUtils::Common::MM::Constant qw(
 # its man page ( perldoc Test::More ) for help writing this test script.
 
 is(
-    Local::ExtUtils::Common::MM::Import::mm_prefix('ExtUtils::Markdown::Pod'),
-    'EXTUTILS_MARKDOWN_POD',
+    ASPEER::MakeMaker::MM::Import::mm_prefix('ASPEER::MakeMaker::Markdown::Pod'),
+    'ASPEER_MAKEMAKER_MARKDOWN_POD',
     'default Makefile prefix is derived from the extension class'
 );
 
 my $tmp_dir=tempdir(CLEANUP => 1);
-my $dest_dir=File::Spec->catdir($tmp_dir, qw(Local ExtUtils Common MM));
+my $dest_dir=File::Spec->catdir($tmp_dir, qw(ASPEER MakeMaker MM));
 make_path($dest_dir);
 my $dest_fn=File::Spec->catfile($dest_dir, 'Util.pm');
 my $version_from_fn=File::Spec->catfile($tmp_dir, 'Version.pm');
@@ -42,10 +42,10 @@ print $version_from_fh "package Version;\nour \$VERSION='0.777';\n1;\n";
 close($version_from_fh) || die "unable to close $version_from_fn, $!";
 
 my @makemaker_args=(
-    'Local::ExtUtils::Common',
-    'Local_ExtUtils_Common',
-    'Local-ExtUtils-Common',
-    'Local-ExtUtils-Common-0.010',
+    'ASPEER::MakeMaker',
+    'ASPEER_MakeMaker',
+    'ASPEER-MakeMaker',
+    'ASPEER-MakeMaker-0.010',
     '0.010',
     '0_010',
     $version_from_fn,
@@ -55,7 +55,7 @@ my @makemaker_args=(
     '',
     'all',
     '.pm',
-    'lib/Local/ExtUtils/Common.pm',
+    'lib/ASPEER/MakeMaker.pm',
 );
 
 sub target_args {
@@ -74,13 +74,13 @@ my $postamble=do {
 
 unlike(
     $postamble,
-    qr/^EXTUTILS_COMMON_PM_TARGET=/m,
+    qr/^ASPEER_MAKEMAKER_PM_TARGET=/m,
     'postamble leaves platform command generation to MakeMaker'
 );
 
 like(
     $postamble,
-    qr/\$\(EXTUTILS_COMMON_PM_TARGET\) util_sync \$\(UPDATE_SOURCE_UTIL_FN\)/,
+    qr/\$\(ASPEER_MAKEMAKER_PM_TARGET\) util_sync \$\(UPDATE_SOURCE_UTIL_FN\)/,
     'postamble passes util_sync method and utility source explicitly'
 );
 
@@ -91,20 +91,20 @@ unlike(
 );
 
 is(
-    scalar split(/,/, $EXTUTILS_COMMON_PM_ARGV),
+    scalar split(/,/, $ASPEER_MAKEMAKER_PM_ARGV),
     scalar @makemaker_args,
     'test MakeMaker argument list matches postamble macro arity'
 );
 
 ok(
-    Local::ExtUtils::Common->util_sync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
+    ASPEER::MakeMaker->util_sync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
     'util_sync copies utility file to trial destination'
 );
 
 ok(-e $dest_fn, 'trial destination exists');
 
 like(
-    Local::ExtUtils::Common::MM::Util::slurp($dest_fn),
+    ASPEER::MakeMaker::MM::Util::slurp($dest_fn),
     qr/\$VERSION='0\.777'/,
     'util_sync applies the version parsed from VERSION_FROM'
 );
@@ -118,7 +118,7 @@ utime($source_mtime + 100, $source_mtime + 100, $dest_fn)
     or die "utime failed for $dest_fn: $!";
 
 ok(
-    Local::ExtUtils::Common->util_sync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
+    ASPEER::MakeMaker->util_sync(target_args($dest_fn, $UPDATE_SOURCE_UTIL_FN)),
     'util_sync overwrites existing destination'
 );
 
@@ -127,7 +127,7 @@ is((stat($dest_fn))[9], $source_mtime, 'util_sync preserves the source timestamp
 like(
     do {
         local $@;
-        eval { Local::ExtUtils::Common->util_sync(target_args($UPDATE_SOURCE_UTIL_FN, $UPDATE_SOURCE_UTIL_FN)) };
+        eval { ASPEER::MakeMaker->util_sync(target_args($UPDATE_SOURCE_UTIL_FN, $UPDATE_SOURCE_UTIL_FN)) };
         $@;
     },
     qr/source and destination are the same/,

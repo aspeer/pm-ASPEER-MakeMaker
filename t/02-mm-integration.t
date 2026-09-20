@@ -10,7 +10,7 @@ use File::Path qw(make_path);
 use File::Temp qw(tempdir);
 use Test::More qw(no_plan);
 
-use Local::ExtUtils::Common::MM::Util ();
+use ASPEER::MakeMaker::MM::Util ();
 
 
 #  Read and write test fixture files
@@ -46,7 +46,7 @@ is(
         $^X,
         "-I$common_lib_dn",
         '-e',
-        '$_=q(caller value); require Local::ExtUtils::Common; exit($_ eq q(caller value) ? 0 : 1)'
+        '$_=q(caller value); require ASPEER::MakeMaker; exit($_ eq q(caller value) ? 0 : 1)'
     ),
     0,
     'loading module preserves caller default variable'
@@ -113,10 +113,10 @@ local $ENV{'PERL5LIB'}=join(
     $Config{'path_sep'},
     grep {defined($_) && length($_)} ($common_lib_dn, $ENV{'PERL5LIB'})
 );
-is(system($^X, "-I$local_lib_dn", '-MLocal::ExtUtils::Common', 'Makefile.PL'), 0,
+is(system($^X, "-I$local_lib_dn", '-MASPEER::MakeMaker', 'Makefile.PL'), 0,
     'Makefile.PL succeeds with command-line import');
 my $makefile=slurp('Makefile');
-like($makefile, qr/^PERLRUN\s*=.*-MLocal::ExtUtils::Common/m,
+like($makefile, qr/^PERLRUN\s*=.*-MASPEER::MakeMaker/m,
     'global PERLRUN reloads the MakeMaker integration');
 like($makefile, qr/^PERLRUN\s*=.*-MExtUtils::MakeMaker/m,
     'global PERLRUN retains loaded MakeMaker modules');
@@ -127,15 +127,15 @@ like($makefile, qr/^Makefile\s*:\s*\$\(VERSION_FROM\)$/m,
 like($makefile, qr/^generated\.out\s*:\s*generated\.in$/m,
     'existing Makefile dependencies are retained');
 like($makefile,
-    qr/^EXTUTILS_COMMON_PM_TARGET=\$\(PERLRUN\) -M\$\(EXTUTILS_COMMON_PM\).*\s-e\s/m,
+    qr/^ASPEER_MAKEMAKER_PM_TARGET=\$\(PERLRUN\) -M\$\(ASPEER_MAKEMAKER_PM\).*\s-e\s/m,
     'target command explicitly reloads its dispatch module');
 like($makefile,
-    qr/^\s*\@\$\(EXTUTILS_COMMON_PM_TARGET\) util_sync \$\(UPDATE_SOURCE_UTIL_FN\)$/m,
+    qr/^\s*\@\$\(ASPEER_MAKEMAKER_PM_TARGET\) util_sync \$\(UPDATE_SOURCE_UTIL_FN\)$/m,
     'util_sync target passes its method explicitly');
 unlike($makefile, qr/^MM_PREFIX\s*=/m,
     'private macro prefix configuration is not emitted');
 my ($perlrun)=($makefile=~/^(PERLRUN\s*=.*)$/m);
-my @common_import=($perlrun=~/-MLocal::ExtUtils::Common(?==|\s|$)/g);
+my @common_import=($perlrun=~/-MASPEER::MakeMaker(?==|\s|$)/g);
 is(scalar(@common_import), 1,
     'global PERLRUN contains the active extension once');
 unlike($makefile, qr/(?:gherkin|foobar|serfin)/,
@@ -160,7 +160,7 @@ if (length($git_sha)) {
         'Git-SHA provenance is included in install map');
     utime(1000000000, 1000000000, 'lib/Sample.pm.sha') ||
         die("unable to set Git-SHA fixture timestamp, $!");
-    is(system($^X, "-I$local_lib_dn", '-MLocal::ExtUtils::Common', 'Makefile.PL'), 0,
+    is(system($^X, "-I$local_lib_dn", '-MASPEER::MakeMaker', 'Makefile.PL'), 0,
         'Makefile.PL can be regenerated');
     is((stat('lib/Sample.pm.sha'))[9], 1000000000,
         'unchanged Git-SHA provenance is not rewritten');
@@ -178,8 +178,8 @@ else {
 my $makefile_pl=slurp('Makefile.PL');
 my $embedded_import=<<'EMBEDDED_IMPORT';
 eval {
-    require Local::ExtUtils::Common;
-    Local::ExtUtils::Common->import();
+    require ASPEER::MakeMaker;
+    ASPEER::MakeMaker->import();
     1;
 };
 
@@ -192,7 +192,7 @@ is(system($^X, 'Makefile.PL'), 0,
 $makefile=slurp('Makefile');
 my @util_sync_target=($makefile=~/^util_sync ::\s*$/mg);
 is(scalar(@util_sync_target), 1, 'embedded activation generates one util_sync target');
-is(system($^X, '-MLocal::ExtUtils::Common', 'Makefile.PL'), 0,
+is(system($^X, '-MASPEER::MakeMaker', 'Makefile.PL'), 0,
     'command-line and embedded activation succeed together');
 $makefile=slurp('Makefile');
 @util_sync_target=($makefile=~/^util_sync ::\s*$/mg);
@@ -211,7 +211,7 @@ WriteMakefile(
     EXE_FILES    => ['bin/sample.pl'],
 );
 MAKEFILE_PL
-is(system($^X, '-MLocal::ExtUtils::Common', 'Makefile.PL'), 0,
+is(system($^X, '-MASPEER::MakeMaker', 'Makefile.PL'), 0,
     'minimal Makefile.PL succeeds without LICENSE or AUTHOR');
 $makefile=slurp('Makefile');
 like($makefile, qr/^EXE_FILES\s*=\s*bin\/sample\.pl$/m,
@@ -245,7 +245,7 @@ WriteMakefile(
     VERSION => '0.001',
 );
 MAKEFILE_PL
-is(system($^X, '-MLocal::ExtUtils::Common', 'Makefile.PL'), 0,
+is(system($^X, '-MASPEER::MakeMaker', 'Makefile.PL'), 0,
     'Makefile.PL succeeds without VERSION_FROM');
 ok(!-e '.sha', 'Git-SHA provenance is not created without VERSION_FROM');
 
@@ -258,7 +258,7 @@ chdir($cwd) || die("unable to chdir $cwd, $!");
     no warnings qw(redefine);
     local *IO::File::new=sub {bless({}, 'Local::FailingWrite')};
     my $write_ok=eval {
-        Local::ExtUtils::Common::MM::Util::blurp('ignored', 'text');
+        ASPEER::MakeMaker::MM::Util::blurp('ignored', 'text');
         1;
     };
     ok(!$write_ok, 'file write failure is fatal');
@@ -267,7 +267,7 @@ chdir($cwd) || die("unable to chdir $cwd, $!");
     no warnings qw(redefine);
     local *IO::File::new=sub {bless({}, 'Local::FailingClose')};
     my $close_ok=eval {
-        Local::ExtUtils::Common::MM::Util::blurp('ignored', 'text');
+        ASPEER::MakeMaker::MM::Util::blurp('ignored', 'text');
         1;
     };
     ok(!$close_ok, 'file close failure is fatal');

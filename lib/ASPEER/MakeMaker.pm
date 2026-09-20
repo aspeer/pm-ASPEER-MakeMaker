@@ -1,5 +1,5 @@
 #
-#  This file is part of Local::ExtUtils::Common.
+#  This file is part of ASPEER::MakeMaker.
 #
 #  This software is copyright (c) 2026 by Andrew Speer <andrew.speer.com.au>.
 #
@@ -10,7 +10,7 @@
 #
 #  <http://dev.perl.org/licenses/>
 #
-package Local::ExtUtils::Common;
+package ASPEER::MakeMaker;
 
 
 #  Pragma
@@ -22,7 +22,7 @@ use vars qw($VERSION $VERSION_GIT_SHA $AUTHORITY);
 
 #  Base packages
 #
-use Local::ExtUtils::Common::MM::Util;
+use ASPEER::MakeMaker::MM::Util;
 
 
 #  Other modules
@@ -51,8 +51,8 @@ chomp($VERSION_GIT_SHA) if defined($VERSION_GIT_SHA);
 sub import {
 
     push (@_, qw(const_config postamble)) unless $_[1];
-    require Local::ExtUtils::Common::MM::Import;
-    goto &Local::ExtUtils::Common::MM::Import::import;
+    require ASPEER::MakeMaker::MM::Import;
+    goto &ASPEER::MakeMaker::MM::Import::import;
     
 }
 
@@ -165,16 +165,16 @@ __END__
 
 =begin markdown
 
-# Local::ExtUtils::Common
+# ASPEER::MakeMaker
 
 ## Name
 
-Local::ExtUtils::Common - top-level entry point and make-target methods for local MakeMaker helpers
+ASPEER::MakeMaker - parent entry point and shared make-target methods for MakeMaker plugins
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common;
+use ASPEER::MakeMaker;
 use ExtUtils::MakeMaker;
 
 WriteMakefile(
@@ -184,45 +184,47 @@ WriteMakefile(
 ```
 
 ```perl
-use Local::ExtUtils::Common qw(const_config postamble);
+use ASPEER::MakeMaker qw(const_config postamble);
 ```
 
 ## Description
 
-`Local::ExtUtils::Common` is the public entry point for the distribution. It
+`ASPEER::MakeMaker` is the public parent entry point for the distribution. It
 sets version metadata, imports shared utility functions from
-`Local::ExtUtils::Common::MM::Util`, and forwards import handling to
-`Local::ExtUtils::Common::MM::Import`.
+`ASPEER::MakeMaker::MM::Util`, and forwards import handling to
+`ASPEER::MakeMaker::MM::Import`.
 
 When imported without arguments, it requests the `const_config` and `postamble`
 MakeMaker sections. The hook installer also enables `depend` and
 `post_initialize`, which provide the standard dependency, install-map, and
 Git-provenance behavior. Import handling is lazy-loaded and then delegated to
-`Local::ExtUtils::Common::MM::Import`.
+`ASPEER::MakeMaker::MM::Import`.
 
-The module also contains methods intended to be invoked by generated make
-targets.
+Child plugins inherit this class and provide a matching `<plugin>::MM` class
+and `<plugin>::MM::Constant` package. The shared import layer then dispatches
+the plugin's own targets while retaining the common lifecycle behavior. The
+module also contains methods intended to be invoked by generated make targets.
 
 ## Methods
 
 ### import
 
 ```perl
-use Local::ExtUtils::Common;
-use Local::ExtUtils::Common qw(const_config postamble);
+use ASPEER::MakeMaker;
+use ASPEER::MakeMaker qw(const_config postamble);
 ```
 
 Enables MakeMaker section hooks. If no sections are supplied, `const_config`
 and `postamble` are requested; `depend` and `post_initialize` are installed by
 the hook manager as common defaults.
 
-The implementation loads `Local::ExtUtils::Common::MM::Import` and forwards to
+The implementation loads `ASPEER::MakeMaker::MM::Import` and forwards to
 its `import` method.
 
 ### dump_param
 
 ```perl
-Local::ExtUtils::Common->dump_param(@makemaker_args, @args);
+ASPEER::MakeMaker->dump_param(@makemaker_args, @args);
 ```
 
 Debugging method. It parses the MakeMaker-style argument list with `arg` and
@@ -231,13 +233,13 @@ prints the resulting hash using `Dumper`.
 ### util_sync
 
 ```perl
-Local::ExtUtils::Common->util_sync(
+ASPEER::MakeMaker->util_sync(
     @makemaker_args,
     $source_file,
 );
 ```
 
-Copies one of this distribution's helper files into the consuming
+Copies one of this distribution's helper files into a consuming
 distribution. The method expects the fixed MakeMaker argument block first,
 followed by the source file path. The destination is not passed directly.
 Instead, `util_sync` derives it from the parsed `TO_INST_PM` MakeMaker value.
@@ -268,7 +270,9 @@ The MakeMaker `VERSION` value is used as a fallback. The result is written
 through a temporary file in the destination directory; source mode and
 timestamps are preserved before the temporary file is renamed into place.
 
-Current behavior allows overwriting an existing destination file.
+Current behavior allows overwriting an existing destination file. Current
+ASPEER child plugins inherit the shared modules directly; this method is
+retained for possible future vendoring or standalone synchronization.
 
 ## Usage Conventions
 
@@ -277,33 +281,33 @@ It is build-time infrastructure and is not intended to be part of normal module
 runtime behavior.
 
 Target methods should accept the fixed MakeMaker argument block first and use
-`Local::ExtUtils::Common::MM::Util::arg` to separate MakeMaker fields from
+`ASPEER::MakeMaker::MM::Util::arg` to separate MakeMaker fields from
 target-specific arguments.
 
 The module supports Perl 5.8 and later.
 
 ## See Also
 
-- `Local::ExtUtils::Common::MM`
-- `Local::ExtUtils::Common::MM::Import`
-- `Local::ExtUtils::Common::MM::Util`
-- `Local::ExtUtils::Common::MM::Constant`
+- `ASPEER::MakeMaker::MM`
+- `ASPEER::MakeMaker::MM::Import`
+- `ASPEER::MakeMaker::MM::Util`
+- `ASPEER::MakeMaker::MM::Constant`
 
 =end markdown
 
 
-=head1 Local::ExtUtils::Common
+=head1 ASPEER::MakeMaker
 
 
 =head2 Name
 
-Local::ExtUtils::Common - top-level entry point and make-target methods for local MakeMaker helpers
+ASPEER::MakeMaker - parent entry point and shared make-target methods for MakeMaker plugins
 
 
 =head2 Synopsis
 
 
- use Local::ExtUtils::Common;
+ use ASPEER::MakeMaker;
  use ExtUtils::MakeMaker;
 
  WriteMakefile(
@@ -311,23 +315,25 @@ Local::ExtUtils::Common - top-level entry point and make-target methods for loca
      VERSION_FROM => 'lib/Some/Module.pm',
  );
 
- use Local::ExtUtils::Common qw(const_config postamble);
+ use ASPEER::MakeMaker qw(const_config postamble);
 
 =head2 Description
 
-C<Local::ExtUtils::Common> is the public entry point for the distribution. It
+C<ASPEER::MakeMaker> is the public parent entry point for the distribution. It
 sets version metadata, imports shared utility functions from
-C<Local::ExtUtils::Common::MM::Util>, and forwards import handling to
-C<Local::ExtUtils::Common::MM::Import>.
+C<ASPEER::MakeMaker::MM::Util>, and forwards import handling to
+C<ASPEER::MakeMaker::MM::Import>.
 
 When imported without arguments, it requests the C<const_config> and C<postamble>
 MakeMaker sections. The hook installer also enables C<depend> and
 C<post_initialize>, which provide the standard dependency, install-map, and
 Git-provenance behavior. Import handling is lazy-loaded and then delegated to
-C<Local::ExtUtils::Common::MM::Import>.
+C<ASPEER::MakeMaker::MM::Import>.
 
-The module also contains methods intended to be invoked by generated make
-targets.
+Child plugins inherit this class and provide a matching C<<< <plugin>::MM >>> class
+and C<<< <plugin>::MM::Constant >>> package. The shared import layer then dispatches
+the plugin's own targets while retaining the common lifecycle behavior. The
+module also contains methods intended to be invoked by generated make targets.
 
 
 =head2 Methods
@@ -336,20 +342,20 @@ targets.
 =head3 import
 
 
- use Local::ExtUtils::Common;
- use Local::ExtUtils::Common qw(const_config postamble);
+ use ASPEER::MakeMaker;
+ use ASPEER::MakeMaker qw(const_config postamble);
 Enables MakeMaker section hooks. If no sections are supplied, C<const_config>
 and C<postamble> are requested; C<depend> and C<post_initialize> are installed by
 the hook manager as common defaults.
 
-The implementation loads C<Local::ExtUtils::Common::MM::Import> and forwards to
+The implementation loads C<ASPEER::MakeMaker::MM::Import> and forwards to
 its C<import> method.
 
 
 =head3 dump_param
 
 
- Local::ExtUtils::Common->dump_param(@makemaker_args, @args);
+ ASPEER::MakeMaker->dump_param(@makemaker_args, @args);
 Debugging method. It parses the MakeMaker-style argument list with C<arg> and
 prints the resulting hash using C<Dumper>.
 
@@ -357,11 +363,11 @@ prints the resulting hash using C<Dumper>.
 =head3 util_sync
 
 
- Local::ExtUtils::Common->util_sync(
+ ASPEER::MakeMaker->util_sync(
      @makemaker_args,
      $source_file,
  );
-Copies one of this distribution's helper files into the consuming
+Copies one of this distribution's helper files into a consuming
 distribution. The method expects the fixed MakeMaker argument block first,
 followed by the source file path. The destination is not passed directly.
 Instead, C<util_sync> derives it from the parsed C<TO_INST_PM> MakeMaker value.
@@ -417,7 +423,9 @@ The MakeMaker C<VERSION> value is used as a fallback. The result is written
 through a temporary file in the destination directory; source mode and
 timestamps are preserved before the temporary file is renamed into place.
 
-Current behavior allows overwriting an existing destination file.
+Current behavior allows overwriting an existing destination file. Current
+ASPEER child plugins inherit the shared modules directly; this method is
+retained for possible future vendoring or standalone synchronization.
 
 
 =head2 Usage Conventions
@@ -427,7 +435,7 @@ It is build-time infrastructure and is not intended to be part of normal module
 runtime behavior.
 
 Target methods should accept the fixed MakeMaker argument block first and use
-C<Local::ExtUtils::Common::MM::Util::arg> to separate MakeMaker fields from
+C<ASPEER::MakeMaker::MM::Util::arg> to separate MakeMaker fields from
 target-specific arguments.
 
 The module supports Perl 5.8 and later.
@@ -439,22 +447,22 @@ The module supports Perl 5.8 and later.
 
 =item -
 
-C<Local::ExtUtils::Common::MM>
+C<ASPEER::MakeMaker::MM>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Import>
+C<ASPEER::MakeMaker::MM::Import>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Util>
+C<ASPEER::MakeMaker::MM::Util>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Constant>
+C<ASPEER::MakeMaker::MM::Constant>
 
 
 =back

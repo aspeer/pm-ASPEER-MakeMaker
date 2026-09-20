@@ -1,5 +1,5 @@
 #
-#  This file is part of Local::ExtUtils::Common.
+#  This file is part of ASPEER::MakeMaker.
 #
 #  This software is copyright (c) 2026 by Andrew Speer <andrew.speer.com.au>.
 #
@@ -10,7 +10,7 @@
 #
 #  <http://dev.perl.org/licenses/>
 #
-package Local::ExtUtils::Common::MM::Util;
+package ASPEER::MakeMaker::MM::Util;
 
 
 #  Pragma
@@ -329,16 +329,16 @@ __END__
 
 =begin markdown
 
-# Local::ExtUtils::Common::MM::Util
+# ASPEER::MakeMaker::MM::Util
 
 ## Name
 
-Local::ExtUtils::Common::MM::Util - shared utility functions for MakeMaker helpers
+ASPEER::MakeMaker::MM::Util - shared utility functions for MakeMaker helpers
 
 ## Synopsis
 
 ```perl
-use Local::ExtUtils::Common::MM::Util;
+use ASPEER::MakeMaker::MM::Util;
 
 msg('building %s', $name);
 my $text = slurp($file);
@@ -350,7 +350,7 @@ my $perlrun = perlrun($hook_object, $make_maker_object);
 
 ## Description
 
-`Local::ExtUtils::Common::MM::Util` exports support functions used by the rest
+`ASPEER::MakeMaker::MM::Util` exports support functions used by the rest
 of the distribution. The helpers cover formatted messages, debugging, simple
 file I/O, MakeMaker target argument parsing, and construction of a Perl command
 for generated make targets.
@@ -493,7 +493,7 @@ classes in activation order. Modules are emitted once. When supplied, the
 active MakeMaker object quotes `-I` arguments for the platform shell.
 
 This value is installed into MakeMaker's `PERLRUN` macro by
-`Local::ExtUtils::Common::MM::Import::const_config` and is reused by generated
+`ASPEER::MakeMaker::MM::Import::const_config` and is reused by generated
 targets.
 
 ## Usage Conventions
@@ -504,25 +504,25 @@ calling arguments instead of reading positional values directly.
 
 ## See Also
 
-- `Local::ExtUtils::Common`
-- `Local::ExtUtils::Common::MM`
-- `Local::ExtUtils::Common::MM::Import`
+- `ASPEER::MakeMaker`
+- `ASPEER::MakeMaker::MM`
+- `ASPEER::MakeMaker::MM::Import`
 
 =end markdown
 
 
-=head1 Local::ExtUtils::Common::MM::Util
+=head1 ASPEER::MakeMaker::MM::Util
 
 
 =head2 Name
 
-Local::ExtUtils::Common::MM::Util - shared utility functions for MakeMaker helpers
+ASPEER::MakeMaker::MM::Util - shared utility functions for MakeMaker helpers
 
 
 =head2 Synopsis
 
 
- use Local::ExtUtils::Common::MM::Util;
+ use ASPEER::MakeMaker::MM::Util;
 
  msg('building %s', $name);
  my $text = slurp($file);
@@ -533,7 +533,7 @@ Local::ExtUtils::Common::MM::Util - shared utility functions for MakeMaker helpe
 
 =head2 Description
 
-C<Local::ExtUtils::Common::MM::Util> exports support functions used by the rest
+C<ASPEER::MakeMaker::MM::Util> exports support functions used by the rest
 of the distribution. The helpers cover formatted messages, debugging, simple
 file I/O, MakeMaker target argument parsing, and construction of a Perl command
 for generated make targets.
@@ -735,7 +735,7 @@ classes in activation order. Modules are emitted once. When supplied, the
 active MakeMaker object quotes C<-I> arguments for the platform shell.
 
 This value is installed into MakeMaker's C<PERLRUN> macro by
-C<Local::ExtUtils::Common::MM::Import::const_config> and is reused by generated
+C<ASPEER::MakeMaker::MM::Import::const_config> and is reused by generated
 targets.
 
 
@@ -752,17 +752,17 @@ calling arguments instead of reading positional values directly.
 
 =item -
 
-C<Local::ExtUtils::Common>
+C<ASPEER::MakeMaker>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM>
+C<ASPEER::MakeMaker::MM>
 
 
 =item -
 
-C<Local::ExtUtils::Common::MM::Import>
+C<ASPEER::MakeMaker::MM::Import>
 
 
 =back

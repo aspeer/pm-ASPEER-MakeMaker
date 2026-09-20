@@ -8,7 +8,9 @@ use ExtUtils::MakeMaker;
 #  Optional MakeMaker helpers, give helper targets
 #
 eval {
-    require ExtUtils::Markdown::Pod; ExtUtils::Markdown::Pod->import(); 1
+    require ASPEER::MakeMaker::Markdown::Pod;
+    ASPEER::MakeMaker::Markdown::Pod->import();
+    1
 };
 
 
@@ -20,10 +22,10 @@ if ($mm_ver =~ /_/) { # dev version
     die $@ if $@;
 }
 my %WriteMakefile=(
-    NAME                => 'Local::ExtUtils::Common',
-    DISTNAME            => 'Local-ExtUtils-Common',
-    VERSION_FROM        => 'lib/Local/ExtUtils/Common.pm',
-    ABSTRACT_FROM       => 'lib/Local/ExtUtils/Common.pm',
+    NAME                => 'ASPEER::MakeMaker',
+    DISTNAME            => 'ASPEER-MakeMaker',
+    VERSION_FROM        => 'lib/ASPEER/MakeMaker.pm',
+    ABSTRACT_FROM       => 'lib/ASPEER/MakeMaker.pm',
     EXE_FILES           => [],
     LICENSE             => 'perl',
     AUTHOR              => 'Andrew Speer <andrew.speer@isolutions.com.au>',
@@ -63,11 +65,11 @@ my %WriteMakefile=(
             version     => 2
         },
         resources       => {
-            homepage    => 'https://github.com/aspeer/pm-Local-ExtUtils-Common',
+            homepage    => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker',
             repository  => {
                 type    => 'git',
-                url     => 'https://github.com/aspeer/pm-Local-ExtUtils-Common.git',
-                web     => 'https://github.com/aspeer/pm-Local-ExtUtils-Common'
+                url     => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker.git',
+                web     => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker'
             }
         }
     },

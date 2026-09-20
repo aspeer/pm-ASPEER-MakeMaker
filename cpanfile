@@ -23,7 +23,7 @@ on configure => sub {
     requires 'ExtUtils::MakeMaker';
     requires 'Tie::File';
     requires 'version';
-    suggests 'ExtUtils::Markdown::Pod';
+    suggests 'ASPEER::MakeMaker::Markdown::Pod';
 };
 
 on test => sub {
