@@ -23,10 +23,11 @@ on configure => sub {
     requires 'ExtUtils::MakeMaker';
     requires 'Tie::File';
     requires 'version';
-    suggests 'ASPEER::MakeMaker::Markdown::Pod';
+    suggests 'ASPEER::MakeMaker::Markdown::Pod', '0.012';
 };
 
 on test => sub {
+    requires 'File::Path';
     requires 'File::Temp';
     requires 'Test::More';
 };

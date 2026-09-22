@@ -38,7 +38,7 @@ use Tie::File;
 #  Version information in a formate suitable for CPAN etc. Must be
 #  all on one line
 #
-$VERSION='1.005';
+$VERSION='1.006';
 
 
 #  All done, init finished
@@ -57,7 +57,7 @@ sub import {
     #  use ExtUtils::<This Package> qw(const_config) to just replace the macros section of the Makefile
     #  .. qw(dist_ci) to replace standard MakeMaker targets with our own
     #  .. qw(:all) or no tag (i.e defaults) to all targers
-    #  
+    #
     #
     my ($class, @section)=@_;
     return if $_{$class}{'loaded'}++;
@@ -79,15 +79,15 @@ sub import {
     #  re-use
     #
     my $self=bless (\my %self, $class);
-    
-    
+
+
     #  Build chain of MM modules loaded for this OS so we can search for
     #  code ref's associated with various ExtUtils::MakeMaker sections;
     #
     my @mm_isa=grep {/^ExtUtils::MM/} @ExtUtils::MM::ISA;
     push @mm_isa, map { @{"${_}::ISA"} } @mm_isa;
     die('no ExtUtils::MM inheritance found in @ISA') unless @mm_isa;
-    
+
 
     #  Sections to augment with additional targets
     #
@@ -125,7 +125,7 @@ sub const_config {
     my ($self, $mm_or, @param)=@_;
     (my $section = (caller(0))[3]) =~ s/^.*:://;
     msg("generating %s $section", ref($self));
-    
+
 
     #  Get original const_config ready for append
     #
@@ -240,12 +240,12 @@ sub postamble {
     #
     my $constant_hr=\%{sprintf('%s::MM::Constant::Constant', ref($self))};
     if (my $patch_fn=$constant_hr->{'TEMPLATE_POSTAMBLE_FN'}) {
-        
-        
+
+
         #  Yes, exists as var so implement
         #
         msg('using template: %s', basename($patch_fn));
-        
+
 
         #  Generate a platform-safe target command and append the template
         #
@@ -261,7 +261,7 @@ sub postamble {
         $pm_target=~s/^\$\(ABSPERLRUN\)/\$\(PERLRUN\) -M\$\($pm_macro\)/;
         $postamble.="$target_macro=$pm_target$/";
         $postamble.=slurp($patch_fn);
-        
+
 
     }
 
@@ -291,14 +291,14 @@ sub post_initialize {
     #  Add license file
     #
     $mm_or->{'PM'}{'LICENSE'}='$(INST_LIBDIR)/$(BASEEXT)/LICENSE' if -e 'LICENSE';
-    
-    
+
+
     #  Don't install docs/tmp files etc.
     #
     my %pm=map { $_=>$mm_or->{'PM'}{$_} } grep { !/\.(?:md|xml|pod|bak|tmp|new|old|ref|0|1)$/ } keys %{$mm_or->{'PM'}};
     $mm_or->{'PM'}=\%pm;
-    
-    
+
+
     #  Update and install Git ref if needed/available
     #
     my $devnull=File::Spec->devnull();
@@ -321,7 +321,7 @@ sub post_initialize {
             $mm_or->{'PM'}{$git_ref_fn}='$(INST_SCRIPT)/'.$git_ref_base_fn;
         }
     }
-    
+
     #  Done
     #
     return $post_initialize

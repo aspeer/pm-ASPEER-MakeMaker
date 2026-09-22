@@ -36,7 +36,7 @@ local $Data::Dumper::Sortkeys=1;
 #  Version information
 #
 $AUTHORITY='cpan:ASPEER';
-$VERSION='1.005';
+$VERSION='1.006';
 $VERSION_GIT_SHA=do { local(@ARGV, $/, $_); @ARGV=($_=__FILE__.'.sha'); <> if -f $_ };
 chomp($VERSION_GIT_SHA) if defined($VERSION_GIT_SHA);
 
@@ -53,7 +53,7 @@ sub import {
     push (@_, qw(const_config postamble)) unless $_[1];
     require ASPEER::MakeMaker::MM::Import;
     goto &ASPEER::MakeMaker::MM::Import::import;
-    
+
 }
 
 
@@ -77,10 +77,10 @@ sub util_sync {
 
     my ($self, $param_hr)=(shift(), arg(@_));
     my ($srce_pn)=@{$param_hr->{'ARGV_AR'}};
-    
-    
-    #  Get dest 
-    # 
+
+
+    #  Get dest
+    #
     msg('util_sync start');
     my $srce_fn=basename($srce_pn) ||
         return err("unable to get basebane from path: $srce_pn");
@@ -89,7 +89,7 @@ sub util_sync {
     my ($dest_pn)=(grep { /MM\/${srce_fn}$/ } @{$to_inst_pm_ar});
     $dest_pn ||
         return err("unable to get destination for $srce_fn from TO_INST_PM_AR: %s, dest file must exist !", Dumper($to_inst_pm_ar));
-    
+
 
     die "usage: $self->util_sync(..., source_filename)\n"
         unless $srce_pn && $dest_pn;
@@ -155,8 +155,8 @@ sub util_sync {
         unlink($tmp_fn) if -e $tmp_fn;
         die $err;
     };
-    
-    
+
+
     msg("updated $dest_pn");
     return 1;
 }

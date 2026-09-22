@@ -41,7 +41,7 @@ use base 'Exporter';
 #  Version information in a format suitable for CPAN etc. Must be
 #  all on one line
 #
-$VERSION='1.005';
+$VERSION='1.006';
 
 
 #  Debugging on ?
@@ -63,7 +63,7 @@ sub quiet_enable {
     #  Turn on quiet flag
     #
     $QUIET=shift() || 1;
-    
+
 
 }
 
@@ -92,7 +92,7 @@ sub debug_enable {
     #  Turn on debugging flag
     #
     $DEBUG=shift();
-    
+
 }
 
 
@@ -104,7 +104,7 @@ sub debug {
     my $debug=sprintf(shift(), @_);
     chomp($debug);
     my ($package, undef, $line, $method) = caller(1);  # '1' for caller of the function
-    print STDERR sprintf("[%s:%d] %s$/", 
+    print STDERR sprintf("[%s:%d] %s$/",
         join('::', grep {$_} ($package, $method)),
         $line,
         $debug
@@ -135,7 +135,7 @@ sub fmt {
     my @caller=(caller(2));
     my $caller=$caller[3] || $caller[0];
     my ($class, $method)=($caller=~/^(.*)::([^:]+)$/);
-    $method ||=$caller[0]; 
+    $method ||=$caller[0];
     $caller=~s/^_?!(_)//;
     my $format=' @<<<<<<<<<<<<<<<<<< @*';
     local $^A='';
@@ -196,7 +196,7 @@ sub touch {
 
 sub perlrun {
 
-    
+
     #  Get self ref
     #
     my ($self, $mm_or)=@_;
@@ -205,8 +205,8 @@ sub perlrun {
     #  Construct PERL runtime
     #
     my $perl_inc_ar=&perl_inc;
-    
-    
+
+
     #  And modules
     #
     my $perl_mod_ar=&perl_mod;
@@ -242,12 +242,12 @@ sub perlrun {
             "-M$class"
     } @perl_mod);
     $perlrun="\$(PERL) $perlrun_inc $perlrun_mod";
-    
-    
+
+
     #  And return
     #
     return $perlrun
-    
+
 }
 
 
@@ -256,8 +256,8 @@ sub perl_mod {
     my %seen=(
         __PACKAGE__ => 1
     );
-    my @m=sort 
-        grep { !$seen{$_}++ } 
+    my @m=sort
+        grep { !$seen{$_}++ }
         map {(my $m = $_) =~ s{\.pm$}{}; $m =~ s{/}{::}g; $m;}
         grep { m{^ExtUtils/} }
         keys %INC;

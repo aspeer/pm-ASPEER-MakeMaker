@@ -28,7 +28,7 @@ use File::Basename qw(dirname);
 
 #  Version information
 #
-$VERSION='1.005';
+$VERSION='1.006';
 
 
 #  Get module file name and path, derive name of file to store local constants
@@ -45,13 +45,13 @@ my $local_fn=abs_path(__FILE__) . '.local';
     MM_PREFIX => 'ASPEER_MAKEMAKER',
 
     ASPEER_MAKEMAKER_PM => 'ASPEER::MakeMaker',
-    
+
     TEMPLATE_POSTAMBLE_FN =>
         File::Spec->catfile(dirname(__FILE__), 'postamble.inc'),
-        
+
     UPDATE_SOURCE_UTIL_FN =>
         File::Spec->catfile(dirname(__FILE__), 'Util.pm'),
-        
+
     UPDATE_SOURCE_IMPORT_FN =>
         File::Spec->catfile(dirname(__FILE__), 'Import.pm'),
 

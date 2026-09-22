@@ -16,9 +16,9 @@ eval {
 
 #  Main Makefile.PL section
 #
-my $mm_ver = $ExtUtils::MakeMaker::VERSION;
+my $mm_ver=$ExtUtils::MakeMaker::VERSION;
 if ($mm_ver =~ /_/) { # dev version
-    $mm_ver = eval $mm_ver;
+    $mm_ver=eval($mm_ver);
     die $@ if $@;
 }
 my %WriteMakefile=(
@@ -60,11 +60,21 @@ my %WriteMakefile=(
         'File::Temp'            =>  0,
         'Test::More'            =>  0,
     },
-    META_MERGE => { 
+    META_MERGE => {
         'meta-spec'     => {
             version     => 2
         },
+        prereqs         => {
+            configure  => {
+                suggests => {
+                    'ASPEER::MakeMaker::Markdown::Pod' => '0.012',
+                },
+            },
+        },
         resources       => {
+            bugtracker  => {
+                web     => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker/issues',
+            },
             homepage    => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker',
             repository  => {
                 type    => 'git',
@@ -73,26 +83,26 @@ my %WriteMakefile=(
             }
         }
     },
-    'depend'            => {
+    depend              => {
         Makefile        => '$(VERSION_FROM)',
     },
-    'dist'		        => {
-	    COMPRESS        =>  'gzip -9f',
-	    SUFFIX		    =>  '.gz'
+    dist                => {
+        COMPRESS        => 'gzip -9f',
+        SUFFIX          => '.gz',
     },
 );
 my %MM_Compat=(
-    '5.46'		        => [q(PM_FILTER)],
-    '6.31'              => [q(LICENSE)],
-    '6.46'              => [q(META_MERGE)],
-    '6.48'              => [q(MIN_PERL_VERSION)],
-    '6.52'              => [q(CONFIGURE_REQUIRES)],
-    '6.5503'            => [q(BUILD_REQUIRES)],
-    '6.64'              => [q(TEST_REQUIRES)],
+    '5.46'              => [qw(PM_FILTER)],
+    '6.31'              => [qw(LICENSE)],
+    '6.46'              => [qw(META_MERGE)],
+    '6.48'              => [qw(MIN_PERL_VERSION)],
+    '6.52'              => [qw(CONFIGURE_REQUIRES)],
+    '6.5503'            => [qw(BUILD_REQUIRES)],
+    '6.64'              => [qw(TEST_REQUIRES)],
 );
-while (my($mm_ver_test, $ar)=each %MM_Compat) {
+while (my ($mm_ver_test, $name_ar)=each(%MM_Compat)) {
     if (version->parse($mm_ver) < version->parse($mm_ver_test)) {
-        delete @WriteMakefile{@{$ar}};
+        delete(@WriteMakefile{@{$name_ar}});
     }
 }
 WriteMakefile(%WriteMakefile);
