@@ -125,3 +125,12 @@ The module supports Perl 5.8 and later.
 - `ASPEER::MakeMaker::MM::Import`
 - `ASPEER::MakeMaker::MM::Util`
 - `ASPEER::MakeMaker::MM::Constant`
+
+# AUTHOR
+
+Andrew Speer <andrew.speer@isolutions.com.au>
+
+# LICENSE AND COPYRIGHT
+
+This software is copyright (c) 2026 by Andrew Speer. It may be distributed
+under the same terms as Perl itself.

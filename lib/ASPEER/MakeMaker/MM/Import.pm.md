@@ -158,3 +158,12 @@ unambiguously, or if a Git-revision sidecar cannot be opened.
 - `ASPEER::MakeMaker::MM::Constant`
 - `ASPEER::MakeMaker::MM::Util`
 - `ExtUtils::MakeMaker`
+
+# AUTHOR
+
+Andrew Speer <andrew.speer@isolutions.com.au>
+
+# LICENSE AND COPYRIGHT
+
+This software is copyright (c) 2026 by Andrew Speer. It may be distributed
+under the same terms as Perl itself.

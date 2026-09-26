@@ -117,3 +117,12 @@ caller's `$_` value.
 - `ASPEER::MakeMaker`
 - `ASPEER::MakeMaker::MM::Import`
 - `ASPEER::MakeMaker::MM::Util`
+
+# AUTHOR
+
+Andrew Speer <andrew.speer@isolutions.com.au>
+
+# LICENSE AND COPYRIGHT
+
+This software is copyright (c) 2026 by Andrew Speer. It may be distributed
+under the same terms as Perl itself.

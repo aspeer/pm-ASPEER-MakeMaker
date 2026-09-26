@@ -1,7 +1,8 @@
 Revision history for ASPEER-MakeMaker
 
-1.006  2026-09-22
+1.011  2026-09-26
 
     - Consolidate the shared MakeMaker lifecycle and utility layer.
     - Preserve extension chaining and generated Makefile targets.
     - Add distribution documentation and integration coverage.
+    - Prepare the consolidated distribution for its first CPAN release.

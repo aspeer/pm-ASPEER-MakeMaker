@@ -67,7 +67,7 @@ my %WriteMakefile=(
         prereqs         => {
             configure  => {
                 suggests => {
-                    'ASPEER::MakeMaker::Markdown::Pod' => '0.012',
+                    'ASPEER::MakeMaker::Markdown::Pod' => '1.010',
                 },
             },
         },

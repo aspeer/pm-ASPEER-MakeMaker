@@ -21,6 +21,15 @@ anchor for the MakeMaker helper implementation. It loads:
 - `ASPEER::MakeMaker::MM::Util`
 - `ASPEER::MakeMaker::MM::Constant`
 
+# AUTHOR
+
+Andrew Speer <andrew.speer@isolutions.com.au>
+
+# LICENSE AND COPYRIGHT
+
+This software is copyright (c) 2026 by Andrew Speer. It may be distributed
+under the same terms as Perl itself.
+
 The active MakeMaker section wrappers and replacement methods are implemented
 in `ASPEER::MakeMaker::MM::Import`.
 
@@ -70,4 +79,3 @@ the current hook implementations.
 - `ASPEER::MakeMaker::MM::Import`
 - `ASPEER::MakeMaker::MM::Util`
 - `ASPEER::MakeMaker::MM::Constant`
-

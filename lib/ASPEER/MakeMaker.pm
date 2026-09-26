@@ -1,7 +1,7 @@
 #
 #  This file is part of ASPEER::MakeMaker.
 #
-#  This software is copyright (c) 2026 by Andrew Speer <andrew.speer.com.au>.
+#  This software is copyright (c) 2026 by Andrew Speer <andrew.speer@isolutions.com.au>.
 #
 #  This is free software; you can redistribute it and/or modify it under
 #  the same terms as the Perl 5 programming language system itself.
@@ -293,6 +293,15 @@ The module supports Perl 5.8 and later.
 - `ASPEER::MakeMaker::MM::Util`
 - `ASPEER::MakeMaker::MM::Constant`
 
+# AUTHOR
+
+Andrew Speer <andrew.speer@isolutions.com.au>
+
+# LICENSE AND COPYRIGHT
+
+This software is copyright (c) 2026 by Andrew Speer. It may be distributed
+under the same terms as Perl itself.
+
 =end markdown
 
 
@@ -466,5 +475,16 @@ C<ASPEER::MakeMaker::MM::Constant>
 
 
 =back
+
+
+=head1 AUTHOR
+
+Andrew Speer L<mailto:andrew.speer@isolutions.com.au>
+
+
+=head1 LICENSE AND COPYRIGHT
+
+This software is copyright (c) 2026 by Andrew Speer. It may be distributed
+under the same terms as Perl itself.
 
 =cut
