@@ -7,14 +7,23 @@ The module is designed to be loaded from a `Makefile.PL`. On import it can
 wrap selected `ExtUtils::MakeMaker` sections, add project-specific Makefile
 macros, and append a reusable postamble containing common make targets.
 
+## Installation
+
+Install the released distribution and its prerequisites from CPAN:
+
+```sh
+cpanm ASPEER::MakeMaker
+```
+
 ## GitHub Attestations
 
 The release workflow generates [GitHub artifact attestations](https://docs.github.com/en/actions/concepts/security/artifact-attestations)
 for distribution archives. Install the [GitHub CLI](https://cli.github.com/)
 with `gh attestation` support and authenticate with `gh auth login`.
 
-Download `ASPEER-MakeMaker-VERSION.tar.gz` from a GitHub release, MetaCPAN,
-or a CPAN mirror, replace `VERSION`, and verify it with:
+To verify a CPAN release archive separately, download
+`ASPEER-MakeMaker-VERSION.tar.gz` from MetaCPAN or a CPAN mirror, replace
+`VERSION`, and run:
 
 ```sh
 gh attestation verify ASPEER-MakeMaker-VERSION.tar.gz --repo aspeer/pm-ASPEER-MakeMaker
