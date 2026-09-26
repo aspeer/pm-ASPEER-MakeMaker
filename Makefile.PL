@@ -61,6 +61,7 @@ my %WriteMakefile=(
         'Test::More'            =>  0,
     },
     META_MERGE => {
+        x_authority     => 'cpan:ASPEER',
         'meta-spec'     => {
             version     => 2
         },
@@ -73,13 +74,13 @@ my %WriteMakefile=(
         },
         resources       => {
             bugtracker  => {
-                web     => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker/issues',
+                web     => 'https://github.com/aspeer/pm-ASPEER-MakeMaker/issues',
             },
-            homepage    => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker',
+            homepage    => 'https://github.com/aspeer/pm-ASPEER-MakeMaker',
             repository  => {
                 type    => 'git',
-                url     => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker.git',
-                web     => 'https://gitea.isolutions.com.au/aspeer/pm-ASPEER-MakeMaker'
+                url     => 'https://github.com/aspeer/pm-ASPEER-MakeMaker.git',
+                web     => 'https://github.com/aspeer/pm-ASPEER-MakeMaker'
             }
         }
     },

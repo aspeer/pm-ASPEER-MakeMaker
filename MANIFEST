@@ -1,4 +1,5 @@
 Changes
+CONTRIBUTING.md
 cpanfile
 lib/ASPEER/MakeMaker.pm
 lib/ASPEER/MakeMaker.pm.md
@@ -17,5 +18,6 @@ MANIFEST			This list of files
 MANIFEST.SKIP
 README
 README.md
+SECURITY.md
 t/02-mm-integration.t
 t/ASPEER-MakeMaker.t
