@@ -38,7 +38,7 @@ use Tie::File;
 #  Version information in a formate suitable for CPAN etc. Must be
 #  all on one line
 #
-$VERSION='1.010';
+$VERSION='1.011';
 
 
 #  All done, init finished
@@ -525,10 +525,19 @@ unambiguously, or if a Git-revision sidecar cannot be opened.
 
 Andrew Speer <andrew.speer@isolutions.com.au>
 
-# LICENSE AND COPYRIGHT
+# LICENSE and COPYRIGHT
 
-This software is copyright (c) 2026 by Andrew Speer. It may be distributed
-under the same terms as Perl itself.
+This file is part of ASPEER::MakeMaker.
+
+This software is copyright (c) 2026 by Andrew Speer <andrew.speer@isolutions.com.au>.
+
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
+
+Full license text is available at:
+
+<http://dev.perl.org/licenses/>
+
 
 =end markdown
 
