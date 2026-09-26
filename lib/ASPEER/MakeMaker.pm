@@ -36,7 +36,7 @@ local $Data::Dumper::Sortkeys=1;
 #  Version information
 #
 $AUTHORITY='cpan:ASPEER';
-$VERSION='1.006';
+$VERSION='1.010';
 $VERSION_GIT_SHA=do { local(@ARGV, $/, $_); @ARGV=($_=__FILE__.'.sha'); <> if -f $_ };
 chomp($VERSION_GIT_SHA) if defined($VERSION_GIT_SHA);
 

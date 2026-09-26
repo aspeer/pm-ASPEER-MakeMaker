@@ -38,7 +38,7 @@ use Tie::File;
 #  Version information in a formate suitable for CPAN etc. Must be
 #  all on one line
 #
-$VERSION='1.006';
+$VERSION='1.010';
 
 
 #  All done, init finished
